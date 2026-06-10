@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Activity Admin</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+.container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #1e293b; }
+header h1 { font-size: 22px; font-weight: 600; color: #38bdf8; }
+header .meta { font-size: 13px; color: #64748b; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; transition: border-color .2s; }
+.card:hover { border-color: #38bdf8; }
+.card .username { font-size: 17px; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+.card .badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+.badge-sim { background: #7c3aed20; color: #a78bfa; border: 1px solid #7c3aed30; }
+.badge-real { background: #05966920; color: #34d399; border: 1px solid #05966930; }
+.card .stats { display: flex; gap: 32px; margin-bottom: 8px; }
+.card .stat-label { font-size: 11px; text-transform: uppercase; color: #64748b; margin-bottom: 2px; }
+.card .stat-value { font-size: 24px; font-weight: 700; }
+.card .stat-value.online { color: #4ade80; }
+.card .stat-value.offline { color: #f87171; }
+.card .stat-value.score { color: #fbbf24; }
+.card .stat-value.friends { color: #38bdf8; }
+.card .detail { font-size: 12px; color: #64748b; margin-top: 8px; }
+.section-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #94a3b8; margin-top: 24px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 12px; border-bottom: 1px solid #334155; color: #64748b; font-weight: 500; }
+td { padding: 10px 12px; border-bottom: 1px solid #1e293b; }
+.login-overlay { position: fixed; inset: 0; background: #0f172a; display: flex; align-items: center; justify-content: center; z-index: 100; }
+.login-box { background: #1e293b; border-radius: 16px; padding: 40px; width: 360px; border: 1px solid #334155; }
+.login-box h2 { margin-bottom: 24px; font-size: 20px; color: #38bdf8; }
+.login-box label { display: block; font-size: 13px; margin-bottom: 6px; color: #94a3b8; }
+.login-box input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 14px; margin-bottom: 16px; outline: none; }
+.login-box input:focus { border-color: #38bdf8; }
+.login-box button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #38bdf8; color: #0f172a; font-size: 15px; font-weight: 600; cursor: pointer; }
+.login-box button:hover { background: #7dd3fc; }
+.login-box .error { color: #f87171; font-size: 13px; margin-bottom: 12px; }
+.hidden { display: none !important; }
+.refresh-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #38bdf8; cursor: pointer; font-size: 13px; }
+.refresh-btn:hover { background: #334155; }
+.loading { text-align: center; padding: 40px; color: #64748b; }
+.progress-bar { width: 100%; height: 6px; background: #1e293b; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width .5s; }
+</style>
+</head>
+<body>
+
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-box">
+    <h2>Admin Login</h2>
+    <div id="loginError" class="error hidden"></div>
+    <label for="username">Username</label>
+    <input type="text" id="username" required placeholder="admin">
+    <label for="password">Password</label>
+    <input type="password" id="password" required>
+    <button onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<div id="dashboard" class="container hidden">
+  <header>
+    <div>
+      <h1>User Activity Dashboard</h1>
+      <div class="meta" id="headerMeta">Live view</div>
+    </div>
+    <button class="refresh-btn" onclick="refreshData()">&#x27F3; Refresh</button>
+  </header>
+  <div class="grid" id="userGrid"><div class="loading">Loading...</div></div>
+  <h2 class="section-title">Recent Activity Reports</h2>
+  <table>
+    <thead><tr><th>ID</th><th>User ID</th><th>Score</th><th>Timestamp</th></tr></thead>
+    <tbody id="logBody"><tr><td colspan="4" style="text-align:center;color:#64748b;">No data yet</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+function doLogin() {
+  const u = document.getElementById("username").value;
+  const p = document.getElementById("password").value;
+  fetch("/admin/login", {
+    method: "POST",
+    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+    body: "username="+encodeURIComponent(u)+"&password="+encodeURIComponent(p)
+  }).then(r => {
+    if (r.ok) {
+      r.json().then(data => { window.location.href = "/admin?token=" + data.token; });
+    } else {
+      document.getElementById("loginError").textContent = "Invalid credentials";
+      document.getElementById("loginError").classList.remove("hidden");
+    }
+  }).catch(() => {
+    document.getElementById("loginError").textContent = "Connection error";
+    document.getElementById("loginError").classList.remove("hidden");
+  });
+}
+document.getElementById("username").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+document.getElementById("password").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+
+const TOKEN = new URLSearchParams(location.search).get("token") || "";
+
+function showDashboard() {
+  document.getElementById("loginOverlay").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+  document.getElementById("headerMeta").textContent = "Live view &#x2022; Auto-refresh every 15s";
+}
+
+async function refreshData() {
+  try {
+    const r = await fetch("/admin/data");
+    const data = await r.json();
+    renderCards(data.users);
+    renderLogs(data.activity_logs);
+  } catch (e) { console.error("Refresh failed:", e); }
+}
+
+function renderCards(users) {
+  const grid = document.getElementById("userGrid");
+  if (!users || !users.length) { grid.innerHTML = '<div class="loading">No users found</div>'; return; }
+  grid.innerHTML = users.map(u => {
+    const isSim = u.is_simulated;
+    const isOn = u.is_online;
+    const score = isOn ? u.activity_score : 0;
+    const barColor = score < 30 ? '#f87171' : score < 70 ? '#fbbf24' : '#4ade80';
+    return '<div class="card">' +
+      '<div class="username">' + u.username +
+        '<span class="badge ' + (isSim ? 'badge-sim' : 'badge-real') + '">' + (isSim ? 'SIMULATED' : 'REAL') + '</span>' +
+      '</div>' +
+      '<div class="stats">' +
+        '<div class="stat"><div class="stat-label">Status</div><div class="stat-value ' + (isOn ? 'online' : 'offline') + '">' + (isOn ? '&#x25CF; Online' : '&#x25CB; Offline') + '</div></div>' +
+        '<div class="stat"><div class="stat-label">Activity</div><div class="stat-value score">' + score + '</div></div>' +
+        '<div class="stat"><div class="stat-label">Friends</div><div class="stat-value friends">' + u.friend_count + '</div></div>' +
+      '</div>' +
+      '<div class="progress-bar"><div class="progress-fill" style="width:' + score + '%;background:' + barColor + '"></div></div>' +
+      '<div class="detail">Last heartbeat: ' + (u.last_heartbeat || '-') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderLogs(logs) {
+  const tbody = document.getElementById("logBody");
+  if (!logs || !logs.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#64748b;">No activity logs yet</td></tr>'; return; }
+  tbody.innerHTML = logs.map(l => '<tr>' +
+    '<td>' + l.id + '</td>' +
+    '<td>' + l.user_id + '</td>' +
+    '<td style="color:' + (l.score < 30 ? '#f87171' : l.score < 70 ? '#fbbf24' : '#4ade80') + '">' + l.score + '</td>' +
+    '<td style="color:#64748b;font-size:12px;">' + l.timestamp + '</td>' +
+  '</tr>').join('');
+}
+
+// Check if logged in via session cookie or URL param
+if (TOKEN) {
+  showDashboard();
+  refreshData();
+  setInterval(refreshData, 15000);
+}
+</script>
+</body>
+</html>
