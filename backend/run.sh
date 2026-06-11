@@ -9,11 +9,11 @@ else
     PYTHON=python3
 fi
 
-# Init DB if not exists
-if [ ! -f activity.db ]; then
-    echo "Initializing demo data..."
-    $PYTHON init_demo.py
-fi
+# Always run init — the script itself skips if data already exists.
+# This ensures demo data is populated even after an auto-migration
+# (database.py's init_db drops stale tables and recreates them empty).
+echo "Initializing demo data..."
+$PYTHON init_demo.py
 
 echo "Starting server..."
 exec $PYTHON -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload

@@ -1,5 +1,5 @@
 """
-Initialize demo data: real users + simulated virtual friends with pre-built friendships.
+Initialize demo data: real users with Chinese nicknames.
 Run once before starting the server:  python init_demo.py
 """
 import asyncio
@@ -13,7 +13,6 @@ from app.auth import hash_password
 async def init_demo():
     await init_db()
     async with async_session() as db:
-        # Check if data already exists
         from sqlalchemy import select, func
         result = await db.execute(select(func.count()).select_from(User))
         count = result.scalar()
@@ -21,34 +20,48 @@ async def init_demo():
             print(f"Database already has {count} users, skipping init. Delete activity.db to re-init.")
             return
 
-        # ── Real users ──────────────────────────────────────────────────────
+        # ── Real users with Chinese nicknames ──────────────────────────────
         users_data = [
-            ("admin", "admin123", False),
-            ("alice", "alice123", False),
-            ("bob", "bob123", False),
-            ("carol", "carol123", False),
+            ("13800001111", "隔壁老王", "laowang123"),
+            ("13800002222", "西毒", "xidu123"),
+            ("13800003333", "东方不败", "dongfang123"),
+            ("13800004444", "南帝", "nandi123"),
+            ("13800005555", "北丐", "beigai123"),
         ]
         real_users = []
-        for username, pw, sim in users_data:
+        for phone, nickname, pw in users_data:
             u = User(
-                username=username,
+                phone=phone,
+                nickname=nickname,
+                username=phone,
                 password_hash=hash_password(pw),
                 activity_score=random.randint(0, 100),
                 is_online=True,
-                is_simulated=sim,
+                is_simulated=False,
                 last_heartbeat=datetime.datetime.utcnow(),
             )
             db.add(u)
             await db.flush()
             real_users.append(u)
 
-        # ── Virtual / Simulated users ───────────────────────────────────────
-        virtual_names = ["dave", "eve", "frank", "grace", "hank", "iris", "jack", "kate"]
+        # ── Virtual / Simulated users ──────────────────────────────────────
+        virtual_data = [
+            ("13900001111", "天山童姥"),
+            ("13900002222", "扫地僧"),
+            ("13900003333", "风清扬"),
+            ("13900004444", "令狐冲"),
+            ("13900005555", "张三丰"),
+            ("13900006666", "独孤求败"),
+            ("13900007777", "叶孤城"),
+            ("13900008888", "花满楼"),
+        ]
         virtual_users = []
-        for name in virtual_names:
+        for phone, nickname in virtual_data:
             u = User(
-                username=name,
-                password_hash=hash_password(f"{name}123"),
+                phone=phone,
+                nickname=nickname,
+                username=phone,
+                password_hash=hash_password(f"{nickname}123"),
                 activity_score=random.randint(0, 100),
                 is_online=True,
                 is_simulated=True,
@@ -61,42 +74,55 @@ async def init_demo():
         await db.commit()
         print(f"Created {len(real_users)} real users + {len(virtual_users)} virtual users")
 
-        # ── Friendships (unidirectional) ────────────────────────────────────
-        # admin -> alice, bob, carol, dave, eve
-        admin = real_users[0]
-        for target in real_users[1:] + virtual_users[:2]:
-            db.add(Friendship(follower_id=admin.id, followee_id=target.id))
+        # ── Friendships (bidirectional for mutual friends) ─────────────────
+        # 隔壁老王 -> 西毒, 东方不败, 南帝, 北丐, 天山童姥, 扫地僧
+        laowang = real_users[0]
+        for target in real_users[1:]:
+            db.add(Friendship(follower_id=laowang.id, followee_id=target.id))
+        for target in virtual_users[:2]:
+            db.add(Friendship(follower_id=laowang.id, followee_id=target.id))
 
-        # alice -> bob, carol, dave, eve
-        alice = real_users[1]
-        for target in real_users[2:] + [virtual_users[0], virtual_users[1]]:
-            db.add(Friendship(follower_id=alice.id, followee_id=target.id))
+        # 西毒 -> 隔壁老王, 东方不败, 南帝, 风清扬, 令狐冲
+        xidu = real_users[1]
+        for target in [real_users[0], real_users[2], real_users[3]]:
+            db.add(Friendship(follower_id=xidu.id, followee_id=target.id))
+        for target in [virtual_users[2], virtual_users[3]]:
+            db.add(Friendship(follower_id=xidu.id, followee_id=target.id))
 
-        # bob -> alice, carol, frank, grace
-        bob = real_users[2]
-        for target in [real_users[1], real_users[3], virtual_users[2], virtual_users[3]]:
-            db.add(Friendship(follower_id=bob.id, followee_id=target.id))
+        # 东方不败 -> 隔壁老王, 西毒, 北丐, 张三丰, 独孤求败
+        dongfang = real_users[2]
+        for target in [real_users[0], real_users[1], real_users[4]]:
+            db.add(Friendship(follower_id=dongfang.id, followee_id=target.id))
+        for target in [virtual_users[4], virtual_users[5]]:
+            db.add(Friendship(follower_id=dongfang.id, followee_id=target.id))
 
-        # carol -> alice, bob, hank, iris
-        carol = real_users[3]
-        for target in [real_users[1], real_users[2], virtual_users[4], virtual_users[5]]:
-            db.add(Friendship(follower_id=carol.id, followee_id=target.id))
+        # 南帝 -> 隔壁老王, 西毒, 北丐, 叶孤城, 花满楼
+        nandi = real_users[3]
+        for target in [real_users[0], real_users[1], real_users[4]]:
+            db.add(Friendship(follower_id=nandi.id, followee_id=target.id))
+        for target in [virtual_users[6], virtual_users[7]]:
+            db.add(Friendship(follower_id=nandi.id, followee_id=target.id))
 
-        # Some virtual users also follow each other (for demo richness)
+        # 北丐 -> 隔壁老王, 东方不败, 南帝
+        beigai = real_users[4]
+        for target in [real_users[0], real_users[2], real_users[3]]:
+            db.add(Friendship(follower_id=beigai.id, followee_id=target.id))
+
+        # Some virtual users also follow each other
         db.add(Friendship(follower_id=virtual_users[0].id, followee_id=virtual_users[1].id))
         db.add(Friendship(follower_id=virtual_users[2].id, followee_id=virtual_users[3].id))
         db.add(Friendship(follower_id=virtual_users[4].id, followee_id=virtual_users[5].id))
+        db.add(Friendship(follower_id=virtual_users[6].id, followee_id=virtual_users[7].id))
 
         await db.commit()
         print("Friendships created")
 
         # ── Summary ─────────────────────────────────────────────────────────
-        print(f"\nDemo users:")
-        print(f"  admin/admin123 — administrator (all friends)")
-        print(f"  alice/alice123 — follows bob, carol, dave, eve")
-        print(f"  bob/bob123     — follows alice, carol, frank, grace")
-        print(f"  carol/carol123 — follows alice, bob, hank, iris")
-        print(f"\n  Virtual users: {', '.join(virtual_names)} (auto-simulated activity)")
+        print(f"\nDemo users (login with phone + password):")
+        for u in real_users:
+            pw = [d[2] for d in users_data if d[0] == u.phone][0]
+            print(f"  {u.phone} / {pw} — {u.nickname}")
+        print(f"\n  Virtual users: {', '.join(d[1] for d in virtual_data)} (auto-simulated activity)")
         print(f"\n  Admin page: http://127.0.0.1:8000/admin")
         print(f"  API base:   http://127.0.0.1:8000")
 

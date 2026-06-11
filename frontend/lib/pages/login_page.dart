@@ -12,13 +12,15 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _usernameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _nicknameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _hostCtrl = TextEditingController();
   final _portCtrl = TextEditingController();
   final _api = ApiService.instance;
   bool _loading = false;
   bool _showServerConfig = false;
+  bool _isRegisterMode = false;
 
   @override
   void initState() {
@@ -30,7 +32,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _usernameCtrl.dispose();
+    _phoneCtrl.dispose();
+    _nicknameCtrl.dispose();
     _passwordCtrl.dispose();
     _hostCtrl.dispose();
     _portCtrl.dispose();
@@ -46,15 +49,15 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
-    final username = _usernameCtrl.text.trim();
+    final phone = _phoneCtrl.text.trim();
     final password = _passwordCtrl.text;
-    if (username.isEmpty || password.isEmpty) return;
+    if (phone.isEmpty || password.isEmpty) return;
 
     _applyServerConfig();
 
     setState(() => _loading = true);
     try {
-      await _api.login(username, password);
+      await _api.login(phone, password);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -69,15 +72,16 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _register() async {
-    final username = _usernameCtrl.text.trim();
+    final phone = _phoneCtrl.text.trim();
+    final nickname = _nicknameCtrl.text.trim();
     final password = _passwordCtrl.text;
-    if (username.isEmpty || password.isEmpty) return;
+    if (phone.isEmpty || nickname.isEmpty || password.isEmpty) return;
 
     _applyServerConfig();
 
     setState(() => _loading = true);
     try {
-      await _api.register(username, password);
+      await _api.register(phone, nickname, password);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -100,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('RuThere'),
+        title: const Text('安心圈'),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
@@ -193,17 +197,34 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 16),
               ],
 
-              // ── Username ──
+              // ── Phone ──
               TextField(
-                controller: _usernameCtrl,
+                controller: _phoneCtrl,
+                keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
-                  labelText: '用户名',
-                  prefixIcon: Icon(Icons.person),
+                  labelText: '手机号',
+                  hintText: '13800138000',
+                  prefixIcon: Icon(Icons.phone_android),
                   border: OutlineInputBorder(),
                 ),
-                textInputAction: TextInputAction.next,
+                style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 16),
+
+              // ── Nickname (register only) ──
+              if (_isRegisterMode) ...[
+                TextField(
+                  controller: _nicknameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '昵称',
+                    hintText: '给自己取个名字',
+                    prefixIcon: Icon(Icons.person),
+                    border: OutlineInputBorder(),
+                  ),
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // ── Password ──
               TextField(
@@ -214,17 +235,18 @@ class _LoginPageState extends State<LoginPage> {
                   prefixIcon: Icon(Icons.lock),
                   border: OutlineInputBorder(),
                 ),
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _login(),
+                style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 24),
 
-              // ── Login button ──
+              // ── Action button ──
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: FilledButton(
-                  onPressed: _loading ? null : _login,
+                  onPressed: _loading
+                      ? null
+                      : (_isRegisterMode ? _register : _login),
                   child: _loading
                       ? const SizedBox(
                           width: 20,
@@ -232,26 +254,22 @@ class _LoginPageState extends State<LoginPage> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('登录', style: TextStyle(fontSize: 16)),
+                      : Text(
+                          _isRegisterMode ? '注册' : '登录',
+                          style: const TextStyle(fontSize: 16),
+                        ),
                 ),
               ),
               const SizedBox(height: 12),
 
-              // ── Register button ──
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: _loading ? null : _register,
-                  child: const Text('注册新用户', style: TextStyle(fontSize: 16)),
+              // ── Toggle mode ──
+              TextButton(
+                onPressed: () =>
+                    setState(() => _isRegisterMode = !_isRegisterMode),
+                child: Text(
+                  _isRegisterMode ? '已有账号？去登录' : '没有账号？去注册',
+                  style: const TextStyle(fontSize: 14),
                 ),
-              ),
-              const SizedBox(height: 24),
-
-              // ── Hint ──
-              Text(
-                '演示账号: admin / admin123',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ],
           ),

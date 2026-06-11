@@ -32,7 +32,7 @@ async def check_heartbeats():
         for user in stale_users:
             user.is_online = False
             user.activity_score = 0
-            logger.info("User %s (id=%d) went offline (heartbeat timeout)", user.username, user.id)
+            logger.info("User %s (id=%d) went offline (heartbeat timeout)", user.nickname, user.id)
 
         await db.commit()
 
@@ -55,10 +55,7 @@ async def simulate_virtual_activities():
 
 
 async def push_activities_to_friends():
-    """
-    Push current activity scores to all real users.
-    This logs the push event; the actual data is always available via GET /api/friends/activity.
-    """
+    """Push current activity scores to all real users (logging only)."""
     async with async_session() as db:
         result = await db.execute(select(User).where(User.is_simulated == False))
         real_users = result.scalars().all()
@@ -70,12 +67,34 @@ async def push_activities_to_friends():
                 )
             )
             friends = friends_query.scalars().all()
-            friend_data = [{"username": f.username, "activity_score": f.activity_score, "is_online": f.is_online} for f in friends]
+            friend_data = [{"nickname": f.nickname, "activity_score": f.activity_score, "is_online": f.is_online} for f in friends]
             logger.info(
                 "Pushed activity to user=%s (id=%d): %d friends",
-                user.username,
+                user.nickname,
                 user.id,
                 len(friend_data),
             )
 
         await db.commit()
+
+
+async def decay_activity_scores():
+    """Decrement every real user's activity score by 1 every 5 seconds.
+
+    Formula: new_score = max(0, current_score - 1)
+    Virtual/simulated users are not affected.
+    """
+    async with async_session() as db:
+        result = await db.execute(
+            select(User).where(User.is_simulated == False, User.activity_score > 0)
+        )
+        active_users = result.scalars().all()
+        if not active_users:
+            return
+
+        for user in active_users:
+            user.activity_score = max(0, user.activity_score - 1)
+
+        await db.commit()
+        if active_users:
+            logger.debug("Decayed vitality for %d users", len(active_users))
