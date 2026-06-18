@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # --- Resend (email verification) ---
     resend_api_key: str = ""
     resend_from_email: str = "no-reply@anxinquan.app"
+    email_code_length: int = 6
+    email_code_expire_minutes: int = 10
+    resend_cooldown_seconds: int = 60  # min gap between two codes for the same email
 
     # --- Activity decay / offline ---
     decay_interval_minutes: int = 10
