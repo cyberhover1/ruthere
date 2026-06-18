@@ -79,3 +79,17 @@ def mock_email_sender(sent_emails: list[tuple[str, str]], monkeypatch) -> None:
     import app.api.auth as auth_module
 
     monkeypatch.setattr(auth_module, "send_verification_email", _fake_send)
+
+
+@pytest.fixture(autouse=True)
+def disable_scheduler(monkeypatch) -> None:
+    """Never start the real APScheduler in tests — decay/offline are called directly."""
+    import app.services.scheduler as sched
+
+    monkeypatch.setattr(sched, "start_scheduler", lambda: None)
+    monkeypatch.setattr(sched, "stop_scheduler", lambda: None)
+    # main.py imported the names by value; patch them there too.
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "start_scheduler", lambda: None)
+    monkeypatch.setattr(main_module, "stop_scheduler", lambda: None)

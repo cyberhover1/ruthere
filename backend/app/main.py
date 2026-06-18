@@ -13,13 +13,19 @@ from fastapi import FastAPI
 from app.api.health import router as health_router
 from app.api.auth import router as auth_router
 from app.api.friends import router as friends_router
+from app.api.activity import router as activity_router
 from app.core.config import settings
+from app.services.scheduler import start_scheduler, stop_scheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # M3 will start APScheduler (decay + offline scan) here.
-    yield
+    # APScheduler: decay + offline scan (PRD §4.4).
+    start_scheduler()
+    try:
+        yield
+    finally:
+        stop_scheduler()
 
 
 def create_app() -> FastAPI:
@@ -32,6 +38,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(auth_router)
     app.include_router(friends_router)
+    app.include_router(activity_router)
     return app
 
 

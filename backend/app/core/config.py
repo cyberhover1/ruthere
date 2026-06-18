@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     # --- Activity decay / offline ---
     decay_interval_minutes: int = 10
     offline_threshold_hours: int = 12
+    decay_rate_per_hour: float = 100 / 12  # 100 -> 0 in 12h by default (≈8.33/h)
+    activity_max_value: int = 100
 
     # --- Friends ---
     qr_token_expire_minutes: int = 10  # dynamic friend-QR token lifetime
