@@ -76,3 +76,12 @@ def friend_removed_payload(removed_by_user_id: int, removed_by_email: str) -> di
         "removed_by_email": removed_by_email,
         "at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def poked_payload(poked_by_user_id: int, poked_by_email: str) -> dict:
+    """Standard payload for a `poked` notification (no secrets)."""
+    return {
+        "poked_by_user_id": poked_by_user_id,
+        "poked_by_email": poked_by_email,
+        "at": datetime.now(timezone.utc).isoformat(),
+    }

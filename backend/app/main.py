@@ -14,6 +14,7 @@ from app.api.health import router as health_router
 from app.api.auth import router as auth_router
 from app.api.friends import router as friends_router
 from app.api.activity import router as activity_router
+from app.api.interactions import router as interactions_router
 from app.core.config import settings
 from app.services.scheduler import start_scheduler, stop_scheduler
 
@@ -39,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(friends_router)
     app.include_router(activity_router)
+    app.include_router(interactions_router)
     return app
 
 

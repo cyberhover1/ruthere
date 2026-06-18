@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     qr_token_expire_minutes: int = 10  # dynamic friend-QR token lifetime
     max_data_sources_per_friend: int = 7  # PRD §4.1 lists 7 sensor sources
 
+    # --- Interactions (PRD §5) ---
+    poke_cooldown_seconds: int = 3600  # same friend can be poked once per hour
+
 
 @lru_cache
 def get_settings() -> Settings:
