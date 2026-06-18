@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     decay_interval_minutes: int = 10
     offline_threshold_hours: int = 12
 
+    # --- Friends ---
+    qr_token_expire_minutes: int = 10  # dynamic friend-QR token lifetime
+    max_data_sources_per_friend: int = 7  # PRD §4.1 lists 7 sensor sources
+
 
 @lru_cache
 def get_settings() -> Settings:
