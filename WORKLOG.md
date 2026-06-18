@@ -1,0 +1,152 @@
+# 安心圈 — 工作日志（WORKLOG）
+
+> 跨会话工作状态记录。下次开机/新会话先读此文件，快速恢复上下文。
+> 最后更新：2026-06-18
+
+---
+
+## 1. 项目概况
+
+- **产品**：安心圈（RutThere）——「位置共享」与「完全失联」之间的免打扰轻量状态互通工具
+- **技术栈**：前端 Kotlin（Android Jetpack Compose） + 后端 Python（FastAPI）
+- **通信模式**：无推送、无轮询；前端上报时后端顺带下发好友状态（PRD §6）
+- **仓库**：`git@github.com:cyberhover1/ruthere.git`，主分支 `main`
+- **需求文档**：`安心圈需求文档（PRD）.md`（本地，**已 git-ignore，不推送**，含泄露密钥）
+- **编程计划**：`安心圈编程计划.md`（本地，**已 git-ignore，不推送**）
+
+## 2. 里程碑进度
+
+| 里程碑 | 状态 | 远程 commit | 说明 |
+|--------|------|------------|------|
+| M0 项目骨架 | ✅ 完成 | `b5813b5` | Kotlin/Compose 前端 + FastAPI 后端 + Docker |
+| M1 用户系统 | ✅ 完成 | `ea7465d` | 邮箱注册/Resend验证码/登录/单设备登录/登出 |
+| M2 好友系统 | ✅ 完成 | `ed445ff` | QR加好友/邮箱搜索/好友申请/昵称/删除/数据源权限矩阵/通知 |
+| M3 活跃度系统 | ✅ 完成 | `bf6ac8f` | 上报/按好友矩阵计算可见值/衰减/离线判定/置满/脱敏下发 |
+| M4 互动功能 | ✅ 完成 | `1495446` | 打卡/戳一戳(限频+发起方置满+通知) |
+| **后端合计** | ✅ **M0-M4 全部完成** | | **71 个测试全绿** |
+| M5 App 骨架 | ⬜ 待开始 | — | Kotlin/Compose 导航/网络层/Room |
+| M6 用户系统(前端) | ⬜ 待开始 | — | 注册/登录/验证码 UI |
+| M7 好友系统(前端) | ⬜ 待开始 | — | 列表/扫码/搜索/昵称/数据源设置 |
+| M8 传感器采集 | ⬜ 待开始 | — | 7 类数据源采集+权限 |
+| M9 活跃度计算上报 | ⬜ 待开始 | — | 归一化/权重/按好友组合/30分钟上报 |
+| M10 好友状态展示 | ⬜ 待开始 | — | 模糊时间/排序/30天趋势图 |
+| M11 互动(前端) | ⬜ 待开始 | — | 打卡/戳一戳 UI |
+| M12 联调上线 | ⬜ 待开始 | — | 端到端/测试/部署 |
+
+**👉 下一步：M5（前端 App 骨架）**
+
+## 3. 版本管理规范（已固化，每个里程碑遵循）
+
+1. 开 `feature/mN-xxx` 分支开发
+2. 单个语义完整的提交，`feat(mN): ...` 前缀 + 详细 body
+3. `git merge --no-ff` 合并到 `main`（保留分支节点）
+4. 推送 feature 分支 + main
+5. 提交前安全核查：无泄露密钥、无 `.env`、无本地 md 文档进入暂存区
+
+## 4. 后端架构与关键决策（已定，勿重复纠结）
+
+### 技术栈
+- FastAPI + SQLAlchemy 2.0（同步）+ Alembic + PostgreSQL（生产）/ SQLite 内存（测试）
+- APScheduler 3.11.2（活跃度衰减+离线扫描）
+- bcrypt（密码哈希，直接用 bcrypt 包绕开 passlib 5.0 warning）+ python-jose（JWT）
+- Resend（邮件验证码）
+
+### 数据库表（迁移链 0001→0002→0003→0004）
+- `users` / `devices`（会话表）/ `email_codes`
+- `friendships`（对称双向行）/ `friend_requests` / `qr_tokens` / `friend_data_sources`（权限矩阵）/ `notifications`
+- `activity_reports`（每 user×friend 一行可见值）
+- `checkins` / `pokes`
+
+### 关键决策记录
+| 决策点 | 选择 | 理由 |
+|--------|------|------|
+| 验证码存储 | 数据库明文 | 用户选定（M1） |
+| 单设备登录 | DB 会话表（devices.is_active） | 用户选定（M1）；JWT 带 device_id，get_current_user 查库确认仍 active |
+| 测试数据库 | SQLite 内存 | 用户选定（M1）；conftest 覆盖 get_db + 禁用 scheduler + mock Resend |
+| 活跃度置满钩子 | M1 留占位，M3 实现 | 用户选定（M1） |
+| 按好友可见性 | 后端按矩阵计算 | 用户选定（M3）；前端上报原始分项，后端按 FriendDataSource 计算每好友可见值，原始分项不持久化 |
+| 衰减速率 | 可配置 decay_rate_per_hour（默认 100/12，12h 衰到 0） | 用户选定（M3） |
+| 删除/戳一戳通知下发 | 仅上报时返回（piggyback） | 用户选定（M2/M4）；严格贴合 PRD §6 |
+| 打卡类型 | 固定枚举（起床/休息/运动/吃饭） | PRD §5.1 |
+| 戳一戳限频 | poke_cooldown_seconds=3600（每小时1次） | PRD §5.2 |
+
+### API 端点总览
+- `/auth`: register, resend-code, verify, login, logout, me
+- `/friends`: qrcode, add-by-qrcode, search, request(s), accept/reject, list, nickname, delete, data-sources, notifications
+- `/activity`: report（上报+下发脱敏好友活跃度+通知）
+- `/checkins`: create, list
+- `/pokes/{friendship_id}`: 戳一戳
+
+## 5. 本地特殊文件（不推送）
+
+| 文件 | 状态 | 说明 |
+|------|------|------|
+| `backend/.env` | git-ignore | **含 Resend API Key**（已泄露的那个），下次务必提醒用户吊销重置 |
+| `安心圈需求文档（PRD）.md` | git-ignore | 含明文密钥，不推送 |
+| `安心圈编程计划.md` | git-ignore | 本地规划文档 |
+| `android/local.properties` | git-ignore | 指向 Windows 侧 Android SDK（WSL 环境） |
+
+## 6. ⚠️ 待办的安全提醒（持续提醒用户）
+
+1. **Resend API Key 已泄露**：原 PRD 文档中明文写入了该密钥（已脱敏，见 `backend/.env`）。仅存于本地 `.env`（未推送），但**强烈建议到 Resend 后台吊销并重新生成**，届时只改 `backend/.env` 一处。
+2. **JWT_SECRET 仍为占位值** `change-me-in-production`，生产前必须改强随机值。
+3. 本地 `.env`、两份 md 文档已 git-ignore，每次提交前仍需核查暂存区不含它们。
+
+## 7. 环境与工具链（WSL2 Linux）
+
+- Python 3.12.3 + venv（`backend/.venv`）
+- Java 17（OpenJDK）
+- Docker + Compose
+- Android SDK 在 Windows 侧：`/mnt/c/Users/lu/AppData/Local/Android/Sdk`（platforms 31-36, build-tools 35.0.0）
+- Gradle 8.10.2（通过 wrapper，首次需联网下载；沙箱受限时可用本地下载的 `/tmp/gradle-8.10.2` 验证）
+- Node 24（暂未用）
+
+## 8. 常用验证命令
+
+### 后端
+```bash
+cd /home/lu/git-projects/ruthere/backend
+. .venv/bin/activate
+pip install -e ".[dev]"          # 装依赖
+pytest -v                         # 跑测试（当前 71 passed）
+uvicorn app.main:app --reload     # 启服务，/health 探活
+alembic upgrade head --sql        # 离线校验迁移 DDL
+alembic heads                     # 查当前 head（应 0004）
+```
+
+### 前端（M5 起用）
+```bash
+cd /home/lu/git-projects/ruthere/android
+./gradlew help                    # 校验工程配置
+./gradlew compileDebugKotlin      # 编译
+./gradlew testDebugUnitTest       # 单元测试
+```
+
+### Git 提交（每里程碑）
+```bash
+git checkout -b feature/mN-xxx
+git add -A
+# 核查：git diff --cached | grep -cE "re_Exy8"  应为 0（无泄露密钥）
+git commit -F - <<'EOF' ... EOF
+git push -u origin feature/mN-xxx
+git checkout main
+git merge --no-ff feature/mN-xxx -m "Merge ..."
+git push origin main
+```
+
+## 9. 下一步：M5（前端 App 骨架）计划要点
+
+参考 `安心圈编程计划.md` 的 M5：
+- Gradle 工程结构（Kotlin + Compose，已在 M0 搭好骨架）
+- 导航：Compose Navigation（好友列表/我的/设置）
+- Room 数据库初始化（好友历史活跃度表，30 天保留）
+- Retrofit 网络层 + JWT 拦截器 + 401 处理
+- 全局错误处理与加载态
+- 后端 base URL 配置（指向 `http://10.0.2.2:8000` 模拟器访问宿主后端）
+
+> M5 可先用 Mock 数据推进 UI，M8/M9 才触及核心采集与计算。
+
+---
+
+## 变更记录
+- 2026-06-18：完成 M0-M4 后端全部功能，71 测试全绿，全部已推送 main。创建此 WORKLOG。
