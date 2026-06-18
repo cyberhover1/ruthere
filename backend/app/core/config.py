@@ -1,0 +1,50 @@
+"""Application configuration loaded from environment variables.
+
+Secrets (Resend API key, JWT secret, DB password) MUST come from the
+environment or a local .env file — never hard-coded. See .env.example.
+"""
+
+from __future__ import annotations
+
+from functools import lru_cache
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    # --- App ---
+    app_name: str = "安心圈"
+    environment: str = Field(default="dev")
+    debug: bool = False
+
+    # --- Database ---
+    database_url: str = "postgresql+psycopg2://ruthere:ruthere@localhost:5432/ruthere"
+
+    # --- Auth ---
+    jwt_secret: str = "change-me-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 24 * 7  # 7 days
+
+    # --- Resend (email verification) ---
+    resend_api_key: str = ""
+    resend_from_email: str = "no-reply@anxinquan.app"
+
+    # --- Activity decay / offline ---
+    decay_interval_minutes: int = 10
+    offline_threshold_hours: int = 12
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()
