@@ -81,8 +81,8 @@ def reset_activity_for_user(user_id: int, db: Session) -> None:
 
     Triggered on login (PRD §4.4.1) and poke-initiator (M4).
     """
-    rows = db.scalars(
-        select(ActivityReport).where(ActivityReport.user_id == user_id)
+    rows = list(
+        db.scalars(select(ActivityReport).where(ActivityReport.user_id == user_id))
     )
     now = _now()
     for row in rows:
@@ -91,7 +91,7 @@ def reset_activity_for_user(user_id: int, db: Session) -> None:
         row.last_reported_at = now
         row.is_offline = False
     db.commit()
-    logger.info("reset activity for user_id=%s (%d rows)", user_id, len(list(rows)))
+    logger.info("reset activity for user_id=%s (%d rows)", user_id, len(rows))
 
 
 def decay_all(db: Session) -> int:
