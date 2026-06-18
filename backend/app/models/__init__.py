@@ -1,8 +1,12 @@
-"""ORM models placeholder.
+"""ORM models.
 
-Concrete models (users, devices, friendships, activity_reports, ...) land in
-M1–M4. Importing Base here lets Alembic's `target_metadata` discover future
-models via `from app.models import *`.
+Importing every model here lets Alembic's `target_metadata = Base.metadata`
+discover them, and lets call sites do `from app.models import User, ...`.
 """
 
-from app.db.base import Base  # noqa: F401
+from app.db.base import Base
+from app.models.device import Device
+from app.models.user import User
+from app.models.verification_code import EmailCode
+
+__all__ = ["Base", "User", "Device", "EmailCode"]
