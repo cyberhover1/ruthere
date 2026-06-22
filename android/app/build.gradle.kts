@@ -16,6 +16,10 @@ android {
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Default backend server address (user-configurable at runtime).
+        buildConfigField("String", "DEFAULT_SERVER_IP", "\"110.42.251.26\"")
+        buildConfigField("int", "DEFAULT_SERVER_PORT", "8000")
     }
 
     buildTypes {
@@ -42,12 +46,14 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
 
@@ -56,7 +62,22 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
+
+    // Networking
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.moshi)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
+
+    // Persistence
+    implementation(libs.androidx.datastore.preferences)
+
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
 
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
