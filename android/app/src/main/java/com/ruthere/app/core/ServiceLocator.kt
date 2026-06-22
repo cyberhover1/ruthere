@@ -6,6 +6,8 @@ import com.ruthere.app.data.prefs.TokenStore
 import com.ruthere.app.data.remote.NetworkClient
 import com.ruthere.app.data.repo.AuthRepository
 import com.ruthere.app.data.repo.FriendRepository
+import com.ruthere.app.data.sensor.SensorCollector
+import com.ruthere.app.data.sensor.SnapshotStore
 
 /**
  * Lightweight singleton service container (no DI framework).
@@ -24,6 +26,9 @@ object ServiceLocator {
 
     val authRepository: AuthRepository by lazy { AuthRepository(networkClient, tokenStore) }
     val friendRepository: FriendRepository by lazy { FriendRepository(networkClient) }
+
+    val snapshotStore: SnapshotStore by lazy { SnapshotStore(appContext) }
+    val sensorCollector: SensorCollector by lazy { SensorCollector(appContext, snapshotStore) }
 
     fun init(context: Context) {
         appContext = context.applicationContext

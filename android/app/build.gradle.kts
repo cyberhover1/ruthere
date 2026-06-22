@@ -83,6 +83,9 @@ dependencies {
     implementation(libs.zxing.core)
     implementation(libs.zxing.android.embedded)
 
+    // WorkManager (periodic sensor collection)
+    implementation(libs.androidx.work.runtime.ktx)
+
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
