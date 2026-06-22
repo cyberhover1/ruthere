@@ -6,6 +6,7 @@
     <!-- Sensor permissions declared as features land in M8 (ACTIVITY_RECOGNITION etc.). -->
 
     <application
+        android:name=".RutThereApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
