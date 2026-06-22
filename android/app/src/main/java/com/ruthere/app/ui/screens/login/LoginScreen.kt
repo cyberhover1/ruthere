@@ -34,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun LoginScreen(
     onLoggedIn: () -> Unit,
     onGoRegister: () -> Unit,
+    onGoSettings: () -> Unit = {},
     vm: AuthViewModel = viewModel(),
 ) {
     val context = LocalContext.current
@@ -90,5 +91,6 @@ fun LoginScreen(
         ) { Text("登录") }
 
         TextButton(onClick = onGoRegister) { Text("没有账号？去注册") }
+        TextButton(onClick = onGoSettings) { Text("服务器设置") }
     }
 }
