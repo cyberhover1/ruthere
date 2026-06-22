@@ -139,10 +139,10 @@ git push origin main
 参考 `安心圈编程计划.md` 的 M5：
 - Gradle 工程结构（Kotlin + Compose，已在 M0 搭好骨架）
 - 导航：Compose Navigation（好友列表/我的/设置）
+- **服务器地址配置（关键）**：默认 IP `110.42.251.26`、端口 `8000`，用户可在设置页修改，提供「恢复默认」按钮；DataStore 持久化；Retrofit base URL 动态构建；`network_security_config.xml` 适配明文 HTTP
 - Room 数据库初始化（好友历史活跃度表，30 天保留）
-- Retrofit 网络层 + JWT 拦截器 + 401 处理
+- Retrofit 网络层 + JWT 拦截器 + 401 处理（base URL 读自服务器配置）
 - 全局错误处理与加载态
-- 后端 base URL 配置（指向 `http://10.0.2.2:8000` 模拟器访问宿主后端）
 
 > M5 可先用 Mock 数据推进 UI，M8/M9 才触及核心采集与计算。
 
@@ -150,3 +150,4 @@ git push origin main
 
 ## 变更记录
 - 2026-06-18：完成 M0-M4 后端全部功能，71 测试全绿，全部已推送 main。创建此 WORKLOG。
+- 2026-06-22：修改前端规划 M5，新增服务器地址配置功能（默认 IP `110.42.251.26`、端口 `8000`，用户可改 + 一键恢复默认按钮）。
