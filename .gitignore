@@ -36,3 +36,6 @@ android/app/release
 # Local-only docs (contain sensitive material — do NOT push)
 安心圈编程计划.md
 安心圈需求文档（PRD）.md
+
+# Local-only Docker deployment config (not synced to GitHub)
+docker/
