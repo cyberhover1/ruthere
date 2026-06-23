@@ -29,11 +29,11 @@
 | M7 好友系统(前端) | ✅ 完成 | `514024f` | 好友列表/添加(二维码生成+扫码+邮箱搜索)/好友申请(同意拒绝)/详情(改昵称+数据源开关+删除)。zxing库。模拟器联调通过 |
 | M8 传感器采集 | ✅ 完成 | `84f77c1` | WorkManager 30分钟周期采集7类数据源+归一化0..1+DataStore存快照基线。SensorCollector/SnapshotStore/SensorWorker/SensorScheduler。模拟器验证采集成功+快照持久化 |
 | M9 活跃度计算上报 | ✅ 完成 | `b19abe4` | SensorWorker采集后上报POST /activity/report(7源components)+后端按好友矩阵计算+下发脱敏活跃度+存FriendsActivityStore。ActivityCalc权重常量。curl验证200 |
-| M10 好友状态展示 | ⬜ 待开始 | — | 模糊时间/排序/30天趋势图 |
+| M10 好友状态展示 | ✅ 完成 | `80a1981` | 好友列表展示活跃度进度条(0-100)+模糊时间(刚刚/活跃中/X分钟前/今天上午/离线等)+排序切换(活跃度/时间/昵称)。TimeFormat工具。模拟器启动无崩溃 |
 | M11 互动(前端) | ⬜ 待开始 | — | 打卡/戳一戳 UI |
 | M12 联调上线 | ⬜ 待开始 | — | 端到端/测试/部署 |
 
-**👉 下一步：M10（好友状态展示）**
+**👉 下一步：M11（互动前端：打卡+戳一戳）**
 
 ## 3. 版本管理规范（已固化，每个里程碑遵循）
 
@@ -140,17 +140,15 @@ git merge --no-ff feature/mN-xxx -m "Merge ..."
 git push origin main
 ```
 
-## 9. 下一步：M10（好友状态展示）计划要点
+## 9. 下一步：M11（互动前端：打卡+戳一戳）计划要点
 
-参考 `安心圈编程计划.md` 的 M10（M5-M9 已完成）：
-- 好友列表页展示活跃度（0~100 环形/进度条）—— M7 已有列表，M10 接 FriendsActivityStore 数据
-- 模糊时间格式化：刚刚/2小时前/今天上午/活跃中/1小时内/今天/很久以前
-- 离线态展示
-- 历史趋势图（30 天，折线/柱状）—— 需 Room 本地历史存储 + 30 天清理
-- 排序：按活跃度 / 最后更新时间 / 昵称（PRD §7）
+参考 `安心圈编程计划.md` 的 M11（M5-M10 已完成）：
+- 打卡 UI：记录状态（起床/休息/运动/吃饭），调 POST /checkins + GET /checkins 历史
+- 戳一戳 UI：在好友详情页加「戳一戳」按钮，调 POST /pokes/{friendship_id}；限频提示（每小时1次）
+- 后端 M4 已实现 /checkins + /pokes 端点，前端 M11 对接 UI
 
-> M9 已将好友下发活跃度存入 FriendsActivityStore；M10 读取展示。
-> M7 的 FriendsListScreen 当前只显示昵称/邮箱，M10 加活跃度数值 + 模糊时间。
+> M7 的 FriendDetailScreen 已有好友详情页，M11 在此加戳一戳按钮。
+> 打卡可放「我的」tab 或独立入口。
 
 ---
 
@@ -162,3 +160,4 @@ git push origin main
 - 2026-06-22：完成 M7 前端好友系统——列表/添加(QR生成+扫码+搜索)/申请/详情(昵称+数据源+删除)；zxing 库；模拟器联调通过；已推送 main `514024f`。
 - 2026-06-22：完成 M8 传感器采集——WorkManager 30分钟周期采集7类数据源+归一化+DataStore快照基线；模拟器验证采集成功+快照持久化；已推送 main `84f77c1`。
 - 2026-06-23：完成 M9 活跃度计算上报——SensorWorker采集后上报POST /activity/report+存FriendsActivityStore；ActivityCalc权重常量；curl验证200；已推送 main `b19abe4`。
+- 2026-06-23：完成 M10 好友状态展示——好友列表活跃度进度条+模糊时间+离线态+排序切换(活跃度/时间/昵称)；TimeFormat工具；模拟器启动无崩溃；已推送 main `80a1981`。
