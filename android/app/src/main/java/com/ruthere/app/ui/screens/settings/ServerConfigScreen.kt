@@ -27,7 +27,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 /** Settings → Server: edit backend IP/port, restore defaults, save & apply. */
 @Composable
-fun ServerConfigScreen(vm: ServerConfigViewModel = viewModel()) {
+fun ServerConfigScreen(
+    vm: ServerConfigViewModel = viewModel(),
+    onGoAbout: () -> Unit = {},
+) {
     val state by vm.state.collectAsState()
 
     Column(
@@ -92,6 +95,11 @@ fun ServerConfigScreen(vm: ServerConfigViewModel = viewModel()) {
                 Spacer(Modifier.height(0.dp))
                 Text("  保存中…")
             }
+        }
+
+        Spacer(Modifier.height(24.dp))
+        OutlinedButton(onClick = onGoAbout, modifier = Modifier.fillMaxWidth()) {
+            Text("关于")
         }
     }
 }

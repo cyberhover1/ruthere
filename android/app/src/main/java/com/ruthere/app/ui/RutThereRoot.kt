@@ -28,6 +28,7 @@ import androidx.navigation.navArgument
 import com.ruthere.app.core.ServiceLocator
 import com.ruthere.app.ui.nav.Routes
 import com.ruthere.app.ui.screens.PlaceholderScreen
+import com.ruthere.app.ui.screens.about.AboutScreen
 import com.ruthere.app.ui.screens.checkin.CheckInScreen
 import com.ruthere.app.ui.screens.friends.FriendAddScreen
 import com.ruthere.app.ui.screens.friends.FriendDetailScreen
@@ -164,7 +165,12 @@ fun RutThereRoot(
             }
 
             composable(Routes.PROFILE) { CheckInScreen() }
-            composable(Routes.SERVER_CONFIG) { ServerConfigScreen() }
+            composable(Routes.SERVER_CONFIG) {
+                ServerConfigScreen(onGoAbout = { navController.navigate(Routes.ABOUT) })
+            }
+            composable(Routes.ABOUT) {
+                AboutScreen(onBack = { navController.popBackStack() })
+            }
         }
     }
 }
