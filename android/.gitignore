@@ -12,3 +12,8 @@ captures/
 
 # Keep gradle wrapper jar — it IS needed for reproducible builds.
 !gradle/wrapper/gradle-wrapper.jar
+
+# Release signing — DO NOT COMMIT (secrets)
+*.jks
+*.keystore
+keystore.properties

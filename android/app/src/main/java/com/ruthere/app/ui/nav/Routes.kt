@@ -11,6 +11,7 @@ object Routes {
     const val FRIEND_REQUESTS = "friend_requests"
     const val FRIEND_DETAIL = "friend_detail/{friendship_id}/{email}/{nickname}"
     const val PROFILE = "profile"
+    const val ABOUT = "about"
 
     fun friendDetail(friendshipId: Int, email: String, nickname: String?): String =
         "friend_detail/$friendshipId/$email/${nickname ?: ""}"
