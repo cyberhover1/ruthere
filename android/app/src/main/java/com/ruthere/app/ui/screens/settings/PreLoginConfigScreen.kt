@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PreLoginConfigScreen(onBack: () -> Unit) {
+fun PreLoginConfigScreen(onBack: () -> Unit, onGoAbout: () -> Unit = {}) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -34,7 +34,7 @@ fun PreLoginConfigScreen(onBack: () -> Unit) {
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
-            ServerConfigScreen()
+            ServerConfigScreen(onGoAbout = onGoAbout)
         }
     }
 }

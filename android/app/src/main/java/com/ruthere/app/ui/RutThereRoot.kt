@@ -170,7 +170,10 @@ fun RutThereRoot(
                 ServerConfigScreen(onGoAbout = { navController.navigate(Routes.ABOUT) })
             }
             composable(Routes.PRE_LOGIN_CONFIG) {
-                PreLoginConfigScreen(onBack = { navController.popBackStack() })
+                PreLoginConfigScreen(
+                    onBack = { navController.popBackStack() },
+                    onGoAbout = { navController.navigate(Routes.ABOUT) },
+                )
             }
             composable(Routes.ABOUT) {
                 AboutScreen(onBack = { navController.popBackStack() })
