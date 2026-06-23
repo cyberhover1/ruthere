@@ -1,6 +1,8 @@
 package com.ruthere.app.data.remote
 
 import com.ruthere.app.data.remote.dto.AddByQrCodeRequest
+import com.ruthere.app.data.remote.dto.ActivityReportRequest
+import com.ruthere.app.data.remote.dto.ActivityReportResponse
 import com.ruthere.app.data.remote.dto.DataSourcesOut
 import com.ruthere.app.data.remote.dto.DataSourcesUpdate
 import com.ruthere.app.data.remote.dto.FriendOut
@@ -96,4 +98,9 @@ interface ApiService {
 
     @GET("friends/notifications")
     suspend fun listNotifications(): List<NotificationOut>
+
+    // --- activity (M3/M9) ---
+
+    @POST("activity/report")
+    suspend fun reportActivity(@Body body: ActivityReportRequest): ActivityReportResponse
 }

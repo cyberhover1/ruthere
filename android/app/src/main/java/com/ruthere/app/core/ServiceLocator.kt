@@ -1,9 +1,11 @@
 package com.ruthere.app.core
 
 import android.content.Context
+import com.ruthere.app.data.local.FriendsActivityStore
 import com.ruthere.app.data.local.ServerConfigStore
 import com.ruthere.app.data.prefs.TokenStore
 import com.ruthere.app.data.remote.NetworkClient
+import com.ruthere.app.data.repo.ActivityRepository
 import com.ruthere.app.data.repo.AuthRepository
 import com.ruthere.app.data.repo.FriendRepository
 import com.ruthere.app.data.sensor.SensorCollector
@@ -26,9 +28,11 @@ object ServiceLocator {
 
     val authRepository: AuthRepository by lazy { AuthRepository(networkClient, tokenStore) }
     val friendRepository: FriendRepository by lazy { FriendRepository(networkClient) }
+    val activityRepository: ActivityRepository by lazy { ActivityRepository(networkClient) }
 
     val snapshotStore: SnapshotStore by lazy { SnapshotStore(appContext) }
     val sensorCollector: SensorCollector by lazy { SensorCollector(appContext, snapshotStore) }
+    val friendsActivityStore: FriendsActivityStore by lazy { FriendsActivityStore(appContext) }
 
     fun init(context: Context) {
         appContext = context.applicationContext
