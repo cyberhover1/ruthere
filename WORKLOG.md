@@ -30,10 +30,10 @@
 | M8 传感器采集 | ✅ 完成 | `84f77c1` | WorkManager 30分钟周期采集7类数据源+归一化0..1+DataStore存快照基线。SensorCollector/SnapshotStore/SensorWorker/SensorScheduler。模拟器验证采集成功+快照持久化 |
 | M9 活跃度计算上报 | ✅ 完成 | `b19abe4` | SensorWorker采集后上报POST /activity/report(7源components)+后端按好友矩阵计算+下发脱敏活跃度+存FriendsActivityStore。ActivityCalc权重常量。curl验证200 |
 | M10 好友状态展示 | ✅ 完成 | `80a1981` | 好友列表展示活跃度进度条(0-100)+模糊时间(刚刚/活跃中/X分钟前/今天上午/离线等)+排序切换(活跃度/时间/昵称)。TimeFormat工具。模拟器启动无崩溃 |
-| M11 互动(前端) | ⬜ 待开始 | — | 打卡/戳一戳 UI |
+| M11 互动(前端) | ✅ 完成 | `949a636` | 打卡页(状态选择+备注+历史，替换"我的"占位)+戳一戳按钮(好友详情页，限频提示，发起方置满)。InteractionDtos/Repository。模拟器启动无崩溃 |
 | M12 联调上线 | ⬜ 待开始 | — | 端到端/测试/部署 |
 
-**👉 下一步：M11（互动前端：打卡+戳一戳）**
+**👉 下一步：M12（联调上线）—— 最后一个里程碑**
 
 ## 3. 版本管理规范（已固化，每个里程碑遵循）
 
@@ -140,15 +140,18 @@ git merge --no-ff feature/mN-xxx -m "Merge ..."
 git push origin main
 ```
 
-## 9. 下一步：M11（互动前端：打卡+戳一戳）计划要点
+## 9. 下一步：M12（联调上线）—— 最后一个里程碑
 
-参考 `安心圈编程计划.md` 的 M11（M5-M10 已完成）：
-- 打卡 UI：记录状态（起床/休息/运动/吃饭），调 POST /checkins + GET /checkins 历史
-- 戳一戳 UI：在好友详情页加「戳一戳」按钮，调 POST /pokes/{friendship_id}；限频提示（每小时1次）
-- 后端 M4 已实现 /checkins + /pokes 端点，前端 M11 对接 UI
+参考 `安心圈编程计划.md` 的 M12（M0-M11 全部完成）：
+- 端到端联调：注册→验证→登录→加好友→采集→上报→展示→打卡→戳一戳 全流程
+- 后端：pytest 覆盖率、接口契约测试、性能评估
+- 前端：UI 测试、电量/内存评估
+- 安全：密钥管理审计、JWT 过期、输入校验、SQL 注入防护、频率限制
+- 隐私合规：确认仅上报脱敏数值，无原始传感器/位置数据外泄（对照 PRD 附录约束）
+- 部署：后端 Docker 化（已做）；Android 签名打包发布
+- 文档：API 文档（FastAPI 自动）、部署说明、运维手册
 
-> M7 的 FriendDetailScreen 已有好友详情页，M11 在此加戳一戳按钮。
-> 打卡可放「我的」tab 或独立入口。
+> 所有业务功能（后端 M0-M4 + 前端 M5-M11）已完成。M12 是收尾：联调、测试、安全审计、部署。
 
 ---
 
@@ -161,3 +164,4 @@ git push origin main
 - 2026-06-22：完成 M8 传感器采集——WorkManager 30分钟周期采集7类数据源+归一化+DataStore快照基线；模拟器验证采集成功+快照持久化；已推送 main `84f77c1`。
 - 2026-06-23：完成 M9 活跃度计算上报——SensorWorker采集后上报POST /activity/report+存FriendsActivityStore；ActivityCalc权重常量；curl验证200；已推送 main `b19abe4`。
 - 2026-06-23：完成 M10 好友状态展示——好友列表活跃度进度条+模糊时间+离线态+排序切换(活跃度/时间/昵称)；TimeFormat工具；模拟器启动无崩溃；已推送 main `80a1981`。
+- 2026-06-23：完成 M11 互动UI——打卡页(状态选择+备注+历史)+戳一戳按钮(好友详情页，限频提示，发起方置满)；InteractionDtos/Repository；模拟器启动无崩溃；已推送 main `949a636`。
