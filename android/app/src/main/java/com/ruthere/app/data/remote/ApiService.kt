@@ -3,6 +3,8 @@ package com.ruthere.app.data.remote
 import com.ruthere.app.data.remote.dto.AddByQrCodeRequest
 import com.ruthere.app.data.remote.dto.ActivityReportRequest
 import com.ruthere.app.data.remote.dto.ActivityReportResponse
+import com.ruthere.app.data.remote.dto.CheckInCreate
+import com.ruthere.app.data.remote.dto.CheckInOut
 import com.ruthere.app.data.remote.dto.DataSourcesOut
 import com.ruthere.app.data.remote.dto.DataSourcesUpdate
 import com.ruthere.app.data.remote.dto.FriendOut
@@ -13,6 +15,7 @@ import com.ruthere.app.data.remote.dto.LoginRequest
 import com.ruthere.app.data.remote.dto.MessageResponse
 import com.ruthere.app.data.remote.dto.NicknameUpdate
 import com.ruthere.app.data.remote.dto.NotificationOut
+import com.ruthere.app.data.remote.dto.PokeOut
 import com.ruthere.app.data.remote.dto.QrCodeResponse
 import com.ruthere.app.data.remote.dto.RegisterRequest
 import com.ruthere.app.data.remote.dto.ResendCodeRequest
@@ -103,4 +106,18 @@ interface ApiService {
 
     @POST("activity/report")
     suspend fun reportActivity(@Body body: ActivityReportRequest): ActivityReportResponse
+
+    // --- interactions (M4/M11) ---
+
+    @POST("checkins")
+    suspend fun createCheckin(@Body body: CheckInCreate): CheckInOut
+
+    @GET("checkins")
+    suspend fun listCheckins(
+        @Query("limit") limit: Int = 50,
+        @Query("offset") offset: Int = 0,
+    ): List<CheckInOut>
+
+    @POST("pokes/{friendship_id}")
+    suspend fun pokeFriend(@Path("friendship_id") friendshipId: Int): PokeOut
 }

@@ -96,6 +96,12 @@ fun FriendDetailScreen(
             item {
                 state.message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
                 Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = vm::poke,
+                    enabled = !state.loading,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("戳一戳") }
+                Spacer(Modifier.height(8.dp))
                 OutlinedButton(
                     onClick = { showDeleteDialog = true },
                     enabled = !state.loading,
