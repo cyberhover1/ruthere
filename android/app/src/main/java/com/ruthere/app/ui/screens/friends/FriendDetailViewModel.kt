@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ruthere.app.core.DataSources
 import com.ruthere.app.core.ServiceLocator
 import com.ruthere.app.data.repo.FriendRepository
+import com.ruthere.app.data.repo.InteractionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +23,7 @@ data class FriendDetailUiState(
 
 class FriendDetailViewModel(
     private val repo: FriendRepository = ServiceLocator.friendRepository,
+    private val interactionRepo: InteractionRepository = ServiceLocator.interactionRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(FriendDetailUiState())
@@ -87,6 +89,22 @@ class FriendDetailViewModel(
                 .fold(
                     onSuccess = { _state.update { it.copy(loading = false, deleted = true, message = "已删除好友") } },
                     onFailure = { _state.update { it.copy(loading = false, message = "删除失败") } },
+                )
+        }
+    }
+
+    /** Poke the friend (PRD §5.2): resets my activity to full + notifies them. */
+    fun poke() {
+        _state.update { it.copy(loading = true, message = null) }
+        viewModelScope.launch {
+            runCatching { interactionRepo.poke(friendshipId) }
+                .fold(
+                    onSuccess = { _state.update { it.copy(loading = false, message = "已戳一戳，你的活跃度已置满") } },
+                    onFailure = { e ->
+                        val msg = e.message ?: "戳一戳失败"
+                        // 429 rate-limit returns a Chinese detail; surface it directly.
+                        _state.update { it.copy(loading = false, message = msg) }
+                    },
                 )
         }
     }

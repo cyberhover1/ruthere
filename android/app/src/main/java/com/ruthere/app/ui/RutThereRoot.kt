@@ -28,6 +28,7 @@ import androidx.navigation.navArgument
 import com.ruthere.app.core.ServiceLocator
 import com.ruthere.app.ui.nav.Routes
 import com.ruthere.app.ui.screens.PlaceholderScreen
+import com.ruthere.app.ui.screens.checkin.CheckInScreen
 import com.ruthere.app.ui.screens.friends.FriendAddScreen
 import com.ruthere.app.ui.screens.friends.FriendDetailScreen
 import com.ruthere.app.ui.screens.friends.FriendRequestsScreen
@@ -162,7 +163,7 @@ fun RutThereRoot(
                 )
             }
 
-            composable(Routes.PROFILE) { PlaceholderScreen("我的") }
+            composable(Routes.PROFILE) { CheckInScreen() }
             composable(Routes.SERVER_CONFIG) { ServerConfigScreen() }
         }
     }
