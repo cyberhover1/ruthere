@@ -37,6 +37,7 @@ import com.ruthere.app.ui.screens.friends.FriendsListScreen
 import com.ruthere.app.ui.screens.login.LoginScreen
 import com.ruthere.app.ui.screens.login.RegisterScreen
 import com.ruthere.app.ui.screens.login.VerifyScreen
+import com.ruthere.app.ui.screens.settings.PreLoginConfigScreen
 import com.ruthere.app.ui.screens.settings.ServerConfigScreen
 import kotlinx.coroutines.launch
 
@@ -107,7 +108,7 @@ fun RutThereRoot(
                 LoginScreen(
                     onLoggedIn = { navController.navigate(Routes.MAIN) { popUpTo(Routes.LOGIN) { inclusive = true } } },
                     onGoRegister = { navController.navigate(Routes.REGISTER) },
-                    onGoSettings = { navController.navigate(Routes.SERVER_CONFIG) },
+                    onGoSettings = { navController.navigate(Routes.PRE_LOGIN_CONFIG) },
                 )
             }
             composable(Routes.REGISTER) {
@@ -167,6 +168,9 @@ fun RutThereRoot(
             composable(Routes.PROFILE) { CheckInScreen() }
             composable(Routes.SERVER_CONFIG) {
                 ServerConfigScreen(onGoAbout = { navController.navigate(Routes.ABOUT) })
+            }
+            composable(Routes.PRE_LOGIN_CONFIG) {
+                PreLoginConfigScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.ABOUT) {
                 AboutScreen(onBack = { navController.popBackStack() })

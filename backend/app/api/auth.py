@@ -24,7 +24,7 @@ from app.schemas.auth import (
     VerifyRequest,
 )
 from app.services.activity import reset_activity_for_user
-from app.services.email import send_verification_email
+from app.services.email import EmailSendError, send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -63,7 +63,14 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> MessageRes
     db.commit()
 
     code_row = _new_code_row(db, body.email)
-    send_verification_email(body.email, code_row.code)
+    try:
+        send_verification_email(body.email, code_row.code)
+    except EmailSendError as e:
+        # Roll back the user + code so they can retry registration cleanly.
+        db.delete(code_row)
+        db.delete(user)
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
     return MessageResponse(message="注册成功，验证码已发送至邮箱")
 
 
@@ -85,7 +92,12 @@ def resend_code(body: ResendCodeRequest, db: Session = Depends(get_db)) -> Messa
             )
 
     code_row = _new_code_row(db, body.email)
-    send_verification_email(body.email, code_row.code)
+    try:
+        send_verification_email(body.email, code_row.code)
+    except EmailSendError as e:
+        db.delete(code_row)
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
     return MessageResponse(message="验证码已重新发送")
 
 

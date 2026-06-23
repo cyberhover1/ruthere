@@ -2,6 +2,7 @@ package com.ruthere.app.ui.screens.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ruthere.app.core.ErrorMessage
 import com.ruthere.app.core.ServiceLocator
 import com.ruthere.app.data.repo.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +32,7 @@ class AuthViewModel(
             _state.update { runCatching { repo.register(email, password) }
                 .fold(
                     onSuccess = { AuthUiState.Success(it.message) },
-                    onFailure = { AuthUiState.Error(it.message ?: "注册失败") },
+                    onFailure = { AuthUiState.Error(ErrorMessage.from(it, "注册失败")) },
                 ) }
         }
     }
@@ -43,7 +44,7 @@ class AuthViewModel(
                 runCatching { repo.verify(email, code) }
                     .fold(
                         onSuccess = { AuthUiState.Success(it.message) },
-                        onFailure = { AuthUiState.Error(it.message ?: "验证失败") },
+                        onFailure = { AuthUiState.Error(ErrorMessage.from(it, "验证失败")) },
                     )
             }
         }
@@ -56,7 +57,7 @@ class AuthViewModel(
                 runCatching { repo.login(email, password, deviceIdentifier) }
                     .fold(
                         onSuccess = { AuthUiState.Success("登录成功") },
-                        onFailure = { AuthUiState.Error(it.message ?: "登录失败") },
+                        onFailure = { AuthUiState.Error(ErrorMessage.from(it, "登录失败")) },
                     )
             }
         }

@@ -12,6 +12,7 @@ object Routes {
     const val FRIEND_DETAIL = "friend_detail/{friendship_id}/{email}/{nickname}"
     const val PROFILE = "profile"
     const val ABOUT = "about"
+    const val PRE_LOGIN_CONFIG = "pre_login_config"
 
     fun friendDetail(friendshipId: Int, email: String, nickname: String?): String =
         "friend_detail/$friendshipId/$email/${nickname ?: ""}"
