@@ -79,7 +79,7 @@ keytool -genkeypair -v -keystore ruthere.jks -keyalg RSA -keysize 2048 -validity
 ⚠️ **务必备份 keystore + 密码**——丢失后无法给 App 升级（同签名要求）。
 
 ### 服务器地址配置
-App 默认连 `http://110.42.251.26:8000`，可在「设置 → 服务器」页修改 IP/端口（含「恢复默认」按钮）。
+App 默认连 `http://0.0.0.0:8000`，可在「设置 → 服务器」页修改 IP/端口（含「恢复默认」按钮）。
 
 ## ⚠️ 安全提醒
 
