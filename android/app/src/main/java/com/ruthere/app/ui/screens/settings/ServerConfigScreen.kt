@@ -29,7 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
+
+import com.ruthere.app.BuildConfig
 
 /** Settings → Server: edit backend IP/port, restore defaults, save & apply. */
 @Composable
@@ -121,6 +124,15 @@ fun ServerConfigScreen(
         ) {
             Text("退出登录")
         }
+
+        Spacer(Modifier.weight(1f))
+        Text(
+            "v${BuildConfig.VERSION_NAME}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
     }
 
     // Logout confirmation dialog

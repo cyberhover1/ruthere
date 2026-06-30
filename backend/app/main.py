@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app import __version__
 from app.api.health import router as health_router
 from app.api.auth import router as auth_router
 from app.api.friends import router as friends_router
@@ -34,7 +35,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="安心圈 API",
         description=settings.app_name,
-        version="0.1.0",
+        version=__version__,
         lifespan=lifespan,
     )
     app.include_router(health_router)

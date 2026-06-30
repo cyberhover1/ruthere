@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter
 
+from app import __version__ as app_version
+
 router = APIRouter(tags=["health"])
 
 
@@ -37,5 +39,6 @@ def health() -> dict[str, str]:
     """Liveness probe — does not touch the DB. Used by Docker / load balancers."""
     return {
         "status": "ok",
+        "app_version": app_version,
         "build_timestamp": _get_build_timestamp(),
     }
