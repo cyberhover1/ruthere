@@ -10,6 +10,7 @@ import com.ruthere.app.data.remote.dto.DataSourcesUpdate
 import com.ruthere.app.data.remote.dto.FriendOut
 import com.ruthere.app.data.remote.dto.FriendRequestCreate
 import com.ruthere.app.data.remote.dto.FriendRequestOut
+import com.ruthere.app.data.remote.dto.HealthResponse
 import com.ruthere.app.data.remote.dto.FriendsListResponse
 import com.ruthere.app.data.remote.dto.LoginRequest
 import com.ruthere.app.data.remote.dto.MessageResponse
@@ -120,4 +121,9 @@ interface ApiService {
 
     @POST("pokes/{friendship_id}")
     suspend fun pokeFriend(@Path("friendship_id") friendshipId: Int): PokeOut
+
+    // --- health ---
+
+    @GET("health")
+    suspend fun health(): HealthResponse
 }
