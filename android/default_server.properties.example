@@ -1,0 +1,4 @@
+# Default server address for the Android app.
+# Copy this file to default_server.properties (git-ignored) and update the IP.
+server.ip=127.0.0.1
+server.port=8000

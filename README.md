@@ -12,7 +12,7 @@
 ruthere/
 ├── backend/          Python (FastAPI) 后端
 ├── android/          Kotlin (Jetpack Compose) Android App
-├── docker-compose.yml
+├── docker/            Docker 部署配置（本地，不入库）
 ├── WORKLOG.md        跨会话工作日志
 └── README.md
 ```
@@ -79,7 +79,11 @@ keytool -genkeypair -v -keystore ruthere.jks -keyalg RSA -keysize 2048 -validity
 ⚠️ **务必备份 keystore + 密码**——丢失后无法给 App 升级（同签名要求）。
 
 ### 服务器地址配置
+<<<<<<< HEAD
 App 默认连 `http://0.0.0.0:8000`，可在「设置 → 服务器」页修改 IP/端口（含「恢复默认」按钮）。
+=======
+App 默认连 `http://<服务器IP>:8000`（在 `android/default_server.properties` 中配置，该文件已 git-ignore，不入库），可在「设置 → 服务器」页修改 IP/端口（含「恢复默认」按钮）。
+>>>>>>> 3a50a22 (feat: add logout button, admin endpoints (list/delete users), build timestamp in health endpoint)
 
 ## ⚠️ 安全提醒
 

@@ -32,6 +32,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun LoginScreen(
+    registeredEmail: String? = null,
     onLoggedIn: () -> Unit,
     onGoRegister: () -> Unit,
     onGoSettings: () -> Unit = {},
@@ -42,7 +43,7 @@ fun LoginScreen(
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown-device"
     }
 
-    var email by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf(registeredEmail ?: "") }
     var password by remember { mutableStateOf("") }
     val state by vm.state.collectAsState()
 

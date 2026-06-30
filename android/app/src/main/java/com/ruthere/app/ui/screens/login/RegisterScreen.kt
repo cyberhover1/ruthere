@@ -36,8 +36,12 @@ fun RegisterScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var registeredEmail by remember { mutableStateOf<String?>(null) }
     val state by vm.state.collectAsState()
+
+    val passwordsMatch = password == confirmPassword
+    val canRegister = email.isNotBlank() && password.length >= 6 && passwordsMatch && state !is AuthUiState.Loading
 
     LaunchedEffect(state) {
         if (state is AuthUiState.Success && registeredEmail == null) {
@@ -67,6 +71,20 @@ fun RegisterScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true, modifier = Modifier.fillMaxWidth(),
         )
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(
+            value = confirmPassword, onValueChange = { confirmPassword = it },
+            label = { Text("确认密码") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true, modifier = Modifier.fillMaxWidth(),
+            isError = confirmPassword.isNotEmpty() && !passwordsMatch,
+            supportingText = if (confirmPassword.isNotEmpty() && !passwordsMatch) {
+                { Text("两次输入的密码不一致") }
+            } else {
+                null
+            },
+        )
         Spacer(Modifier.height(20.dp))
 
         when (val s = state) {
@@ -77,7 +95,7 @@ fun RegisterScreen(
 
         Button(
             onClick = { vm.register(email, password) },
-            enabled = email.isNotBlank() && password.length >= 6 && state !is AuthUiState.Loading,
+            enabled = canRegister,
             modifier = Modifier.fillMaxWidth(),
         ) { Text("注册并发送验证码") }
 

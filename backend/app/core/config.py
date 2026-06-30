@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
     # --- Resend (email verification) ---
     resend_api_key: str = ""
-    resend_from_email: str = "no-reply@anxinquan.app"
+    resend_from_email: str = "no-reply@lwytool.com"
     email_code_length: int = 6
     email_code_expire_minutes: int = 10
     resend_cooldown_seconds: int = 60  # min gap between two codes for the same email
@@ -52,6 +52,9 @@ class Settings(BaseSettings):
 
     # --- Interactions (PRD §5) ---
     poke_cooldown_seconds: int = 3600  # same friend can be poked once per hour
+
+    # --- Admin ---
+    admin_api_key: str = "admin"  # API key for /admin endpoints
 
 
 @lru_cache

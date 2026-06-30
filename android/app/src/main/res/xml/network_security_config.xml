@@ -5,7 +5,6 @@
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
         <domain includeSubdomains="true">10.0.2.2</domain>
-        <domain includeSubdomains="true">110.42.251.26</domain>
     </domain-config>
     <!-- Fallback: allow cleartext to any host (user can change server IP freely). -->
     <base-config cleartextTrafficPermitted="true" />

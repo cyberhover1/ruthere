@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FeaturedPlayList
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -71,7 +72,7 @@ fun FriendsListScreen(
             TopAppBar(
                 title = { Text("好友") },
                 actions = {
-                    IconButton(onClick = onOpenRequests) { Icon(Icons.Filled.PersonAdd, "申请") }
+                    IconButton(onClick = onOpenRequests) { Icon(Icons.Filled.FeaturedPlayList, "申请") }
                     IconButton(onClick = onAddFriend) { Icon(Icons.Filled.PersonAdd, "添加") }
                 },
             )

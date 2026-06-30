@@ -39,9 +39,16 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Default backend server address (user-configurable at runtime).
-        buildConfigField("String", "DEFAULT_SERVER_IP", "\"110.42.251.26\"")
-        buildConfigField("int", "DEFAULT_SERVER_PORT", "8000")
+        // Default backend server address — read from default_server.properties (git-ignored).
+        // Falls back to 127.0.0.1:8000 if the properties file is absent.
+        val serverPropsFile = rootProject.file("default_server.properties")
+        val serverProps = Properties().apply {
+            if (serverPropsFile.exists()) {
+                load(FileInputStream(serverPropsFile))
+            }
+        }
+        buildConfigField("String", "DEFAULT_SERVER_IP", "\"${serverProps.getProperty("server.ip", "127.0.0.1")}\"")
+        buildConfigField("int", "DEFAULT_SERVER_PORT", serverProps.getProperty("server.port", "8000"))
     }
 
     buildTypes {

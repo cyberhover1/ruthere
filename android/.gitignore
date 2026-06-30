@@ -17,3 +17,6 @@ captures/
 *.jks
 *.keystore
 keystore.properties
+
+# Default server address — DO NOT COMMIT (contains your real server IP)
+default_server.properties

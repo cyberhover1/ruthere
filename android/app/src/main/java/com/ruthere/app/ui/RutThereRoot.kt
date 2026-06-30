@@ -104,8 +104,12 @@ fun RutThereRoot(
             startDestination = startRoute,
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
-            composable(Routes.LOGIN) {
+            composable(
+                route = "${Routes.LOGIN}?registeredEmail={registeredEmail}",
+                arguments = listOf(navArgument("registeredEmail") { type = NavType.StringType; nullable = true; defaultValue = null }),
+            ) { entry ->
                 LoginScreen(
+                    registeredEmail = entry.arguments?.getString("registeredEmail"),
                     onLoggedIn = { navController.navigate(Routes.MAIN) { popUpTo(Routes.LOGIN) { inclusive = true } } },
                     onGoRegister = { navController.navigate(Routes.REGISTER) },
                     onGoSettings = { navController.navigate(Routes.PRE_LOGIN_CONFIG) },
@@ -121,7 +125,7 @@ fun RutThereRoot(
                 val email = entry.arguments?.getString("email").orEmpty()
                 VerifyScreen(
                     email = email,
-                    onVerified = { navController.navigate(Routes.LOGIN) { popUpTo(Routes.REGISTER) { inclusive = true } } },
+                    onVerified = { navController.navigate("${Routes.LOGIN}?registeredEmail=$email") { popUpTo(Routes.REGISTER) { inclusive = true } } },
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -167,7 +171,17 @@ fun RutThereRoot(
 
             composable(Routes.PROFILE) { CheckInScreen() }
             composable(Routes.SERVER_CONFIG) {
-                ServerConfigScreen(onGoAbout = { navController.navigate(Routes.ABOUT) })
+                ServerConfigScreen(
+                    onGoAbout = { navController.navigate(Routes.ABOUT) },
+                    onLogout = {
+                        scope.launch {
+                            ServiceLocator.authRepository.logout()
+                            navController.navigate(Routes.LOGIN) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    },
+                )
             }
             composable(Routes.PRE_LOGIN_CONFIG) {
                 PreLoginConfigScreen(
