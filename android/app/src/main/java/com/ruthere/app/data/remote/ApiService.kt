@@ -12,9 +12,11 @@ import com.ruthere.app.data.remote.dto.FriendRequestCreate
 import com.ruthere.app.data.remote.dto.FriendRequestOut
 import com.ruthere.app.data.remote.dto.HealthResponse
 import com.ruthere.app.data.remote.dto.FriendsListResponse
+import com.ruthere.app.data.remote.dto.PokeStatsResponse
 import com.ruthere.app.data.remote.dto.LoginRequest
 import com.ruthere.app.data.remote.dto.MessageResponse
 import com.ruthere.app.data.remote.dto.NicknameUpdate
+import com.ruthere.app.data.remote.dto.NicknameUpdateRequest
 import com.ruthere.app.data.remote.dto.NotificationOut
 import com.ruthere.app.data.remote.dto.PokeOut
 import com.ruthere.app.data.remote.dto.QrCodeResponse
@@ -55,6 +57,9 @@ interface ApiService {
 
     @GET("auth/me")
     suspend fun me(): UserOut
+
+    @PATCH("auth/me/nickname")
+    suspend fun updateMyNickname(@Body body: NicknameUpdateRequest): MessageResponse
 
     // --- friends (M2) ---
 
@@ -99,6 +104,9 @@ interface ApiService {
         @Path("friendship_id") friendshipId: Int,
         @Body body: DataSourcesUpdate,
     ): DataSourcesOut
+
+    @GET("friends/{friendship_id}/poke-stats")
+    suspend fun getPokeStats(@Path("friendship_id") friendshipId: Int): PokeStatsResponse
 
     @GET("friends/notifications")
     suspend fun listNotifications(): List<NotificationOut>

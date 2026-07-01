@@ -53,7 +53,7 @@ def start_scheduler() -> None:
     global _scheduler
     if _scheduler is not None:
         return
-    sched = BackgroundScheduler(timezone="UTC")
+    sched = BackgroundScheduler(timezone="Asia/Shanghai")
     sched.add_job(
         _run_decay,
         "interval",

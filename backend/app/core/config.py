@@ -6,10 +6,14 @@ environment or a local .env file — never hard-coded. See .env.example.
 
 from __future__ import annotations
 
+from datetime import timedelta, timezone
 from functools import lru_cache
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Beijing time (UTC+8) — the canonical timezone for all timestamps.
+BEIJING_TZ = timezone(timedelta(hours=8))
 
 
 class Settings(BaseSettings):

@@ -21,6 +21,11 @@ data class ServerConfigUiState(
     val saving: Boolean = false,
     val message: String? = null,
     val isValid: Boolean = true,
+    // Nickname editing
+    val userNickname: String = "",
+    val userEmail: String = "",
+    val nicknameInput: String = "",
+    val savingNickname: Boolean = false,
 )
 
 class ServerConfigViewModel(
@@ -39,6 +44,17 @@ class ServerConfigViewModel(
                     it.copy(
                         ip = addr.ip, port = addr.port,
                         ipInput = addr.ip, portInput = addr.port.toString(),
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            runCatching { repo.me() }.onSuccess { user ->
+                _state.update {
+                    it.copy(
+                        userNickname = user.nickname.orEmpty(),
+                        nicknameInput = user.nickname.orEmpty(),
+                        userEmail = user.email,
                     )
                 }
             }
@@ -92,6 +108,41 @@ class ServerConfigViewModel(
                     message = "已保存并生效：${s.ipInput}:$port",
                 )
             }
+        }
+    }
+
+    // --- Nickname ---
+
+    fun onNicknameChange(value: String) {
+        _state.update { it.copy(nicknameInput = value, message = null) }
+    }
+
+    fun saveNickname() {
+        val s = _state.value
+        _state.update { it.copy(savingNickname = true, message = null) }
+        val nick = s.nicknameInput.ifBlank { null }
+        viewModelScope.launch {
+            runCatching { repo.updateNickname(nick) }
+                .fold(
+                    onSuccess = {
+                        _state.update { state ->
+                            state.copy(
+                                savingNickname = false,
+                                userNickname = nick.orEmpty(),
+                                message = "昵称已更新",
+                            )
+                        }
+                    },
+                    onFailure = { e ->
+                        _state.update { state ->
+                            state.copy(
+                                savingNickname = false,
+                                nicknameInput = state.userNickname,  // revert to saved value
+                                message = e.message ?: "昵称更新失败",
+                            )
+                        }
+                    },
+                )
         }
     }
 

@@ -26,10 +26,10 @@ class AuthViewModel(
     private val _state = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
 
-    fun register(email: String, password: String) {
+    fun register(email: String, password: String, nickname: String? = null) {
         _state.value = AuthUiState.Loading
         viewModelScope.launch {
-            _state.update { runCatching { repo.register(email, password) }
+            _state.update { runCatching { repo.register(email, password, nickname) }
                 .fold(
                     onSuccess = { AuthUiState.Success(it.message) },
                     onFailure = { AuthUiState.Error(ErrorMessage.from(it, "注册失败")) },

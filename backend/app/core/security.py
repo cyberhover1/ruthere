@@ -6,13 +6,13 @@ deprecation warning against bcrypt >= 4, and the raw API is trivial here.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Any
 
 import bcrypt
 from jose import JWTError, jwt
 
-from app.core.config import settings
+from app.core.config import BEIJING_TZ, settings
 
 
 # --- Password hashing ---
@@ -32,7 +32,7 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 def create_access_token(user_id: int, device_id: int) -> str:
     """Sign a JWT binding the user and device session."""
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    expire = datetime.now(BEIJING_TZ) + timedelta(minutes=settings.access_token_expire_minutes)
     payload: dict[str, Any] = {
         "sub": str(user_id),
         "device_id": device_id,

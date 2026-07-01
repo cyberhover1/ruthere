@@ -3,20 +3,21 @@
 from __future__ import annotations
 
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_device, get_current_user
-from app.core.config import settings
+from app.core.config import BEIJING_TZ, settings
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db.session import get_db
 from app.models import Device, EmailCode, User
 from app.schemas.auth import (
     LoginRequest,
     MessageResponse,
+    NicknameUpdateRequest,
     RegisterRequest,
     ResendCodeRequest,
     TokenResponse,
@@ -38,7 +39,7 @@ def _generate_code() -> str:
 def _new_code_row(db: Session, email: str) -> EmailCode:
     """Create + persist a fresh verification code for `email`."""
     code = _generate_code()
-    expire_at = datetime.now(timezone.utc) + timedelta(minutes=settings.email_code_expire_minutes)
+    expire_at = datetime.now(BEIJING_TZ) + timedelta(minutes=settings.email_code_expire_minutes)
     row = EmailCode(email=email, code=code, expire_at=expire_at, used=False)
     db.add(row)
     db.commit()
@@ -58,7 +59,17 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> MessageRes
     if existing is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="该邮箱已注册")
 
-    user = User(email=body.email, password_hash=hash_password(body.password), is_verified=False)
+    # Default nickname: use email username part (before @)
+    nickname = body.nickname
+    if not nickname:
+        nickname = body.email.split("@")[0]
+
+    user = User(
+        email=body.email,
+        password_hash=hash_password(body.password),
+        nickname=nickname,
+        is_verified=False,
+    )
     db.add(user)
     db.commit()
 
@@ -84,7 +95,7 @@ def resend_code(body: ResendCodeRequest, db: Session = Depends(get_db)) -> Messa
 
     latest = _latest_code(db, body.email)
     if latest is not None:
-        elapsed = (datetime.now(timezone.utc) - latest.created_at.replace(tzinfo=timezone.utc)).total_seconds()
+        elapsed = (datetime.now(BEIJING_TZ) - latest.created_at.replace(tzinfo=BEIJING_TZ)).total_seconds()
         if elapsed < settings.resend_cooldown_seconds:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -116,7 +127,7 @@ def verify(body: VerifyRequest, db: Session = Depends(get_db)) -> MessageRespons
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="验证码错误")
     if code_row.used:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="验证码已使用")
-    if code_row.expire_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+    if code_row.expire_at.replace(tzinfo=BEIJING_TZ) < datetime.now(BEIJING_TZ):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="验证码已过期")
 
     code_row.used = True
@@ -161,3 +172,14 @@ def logout(
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(get_current_user)) -> UserOut:
     return UserOut.model_validate(user)
+
+
+@router.patch("/me/nickname", response_model=MessageResponse)
+def update_my_nickname(
+    body: NicknameUpdateRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    user.nickname = body.nickname
+    db.commit()
+    return MessageResponse(message="昵称已更新")

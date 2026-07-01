@@ -7,7 +7,7 @@ are exercised by calling the service functions directly (scheduler disabled).
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from app.core.activity_calc import compute_activity, compute_visible_for_friend
 from app.models import ActivityReport
@@ -177,7 +177,8 @@ def test_decay_lowers_value_over_time(client, db):
     assert row.value == 100
 
     # Backdate the last report by 6 hours -> ~50% decayed (rate 100/12 per hour * 6 = 50).
-    row.last_reported_at = datetime.now(timezone.utc) - timedelta(hours=6)
+    from app.core.config import BEIJING_TZ
+    row.last_reported_at = datetime.now(BEIJING_TZ) - timedelta(hours=6)
     db.commit()
 
     changed = decay_all(db)
@@ -194,7 +195,8 @@ def test_decay_floors_at_zero(client, db):
     client.post("/activity/report", json={"components": {"steps": 1.0}}, headers=auth_header(ta))
     row = db.query(ActivityReport).filter_by(user_id=ida, friend_id=idb).one()
     # Backdate well past full decay (e.g. 24h).
-    row.last_reported_at = datetime.now(timezone.utc) - timedelta(hours=24)
+    from app.core.config import BEIJING_TZ
+    row.last_reported_at = datetime.now(BEIJING_TZ) - timedelta(hours=24)
     db.commit()
     decay_all(db)
     db.refresh(row)
@@ -210,7 +212,8 @@ def test_mark_offline_after_threshold(client, db):
     assert row.is_offline is False
 
     # Backdate past 12h.
-    row.last_reported_at = datetime.now(timezone.utc) - timedelta(hours=13)
+    from app.core.config import BEIJING_TZ
+    row.last_reported_at = datetime.now(BEIJING_TZ) - timedelta(hours=13)
     db.commit()
 
     marked = mark_offline(db)

@@ -24,11 +24,7 @@ class FriendRequestsViewModel(
     private val _state = MutableStateFlow<FriendRequestsUiState>(FriendRequestsUiState.Loading)
     val state: StateFlow<FriendRequestsUiState> = _state.asStateFlow()
 
-    private var myUserId: Int = -1
-
     init { refresh() }
-
-    fun setMyUserId(id: Int) { myUserId = id }
 
     fun refresh() {
         _state.value = FriendRequestsUiState.Loading
@@ -56,7 +52,4 @@ class FriendRequestsViewModel(
             )
         }
     }
-
-    /** Whether a request was received by me (vs sent by me). */
-    fun isIncoming(r: FriendRequestOut): Boolean = r.to_user_id == myUserId
 }

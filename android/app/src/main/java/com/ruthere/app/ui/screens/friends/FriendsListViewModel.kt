@@ -7,6 +7,7 @@ import com.ruthere.app.data.local.FriendsActivityStore
 import com.ruthere.app.data.remote.dto.FriendActivityOut
 import com.ruthere.app.data.remote.dto.FriendOut
 import com.ruthere.app.data.remote.dto.NotificationOut
+import com.ruthere.app.data.remote.dto.PokeStatsResponse
 import com.ruthere.app.data.repo.FriendRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,13 +43,15 @@ class FriendsListViewModel(
     private var lastFriends: List<FriendOut> = emptyList()
     private var lastNotifications: List<NotificationOut> = emptyList()
     private var lastActivity: Map<Int, FriendActivityOut> = emptyMap()
+    private var lastPokedAtMap: Map<Int, String> = emptyMap()
 
     init {
         refresh()
         // Reactively update when delivered activity changes (after a sensor-worker upload).
         viewModelScope.launch {
             activityStore.activities.collect { activityMap ->
-                lastActivity = activityMap
+                // Merge store data with our poke timestamps (which come from /friends, not /activity/report).
+                lastActivity = mergePokedAt(activityMap)
                 emitLoaded()
             }
         }
@@ -62,7 +65,15 @@ class FriendsListViewModel(
                     onSuccess = { resp ->
                         lastFriends = resp.friends
                         lastNotifications = resp.notifications
-                        lastActivity = activityStore.current()
+                        // Use activity from the list response immediately, so we
+                        // never show stale zeros while waiting for the sensor worker.
+                        lastActivity = resp.friends_activity.associateBy { it.friend_id }
+                        // Keep poke timestamps separate so they survive store updates.
+                        lastPokedAtMap = resp.friends_activity
+                            .filter { it.last_poked_at != null }
+                            .associate { it.friend_id to it.last_poked_at!! }
+                        // Merge in any locally-cached activity as an override.
+                        lastActivity = mergePokedAt(activityStore.current() + lastActivity)
                         emitLoaded()
                     },
                     onFailure = { _state.value = FriendsListUiState.Error(it.message ?: "加载好友列表失败") },
@@ -74,6 +85,23 @@ class FriendsListViewModel(
         sortMode = mode
         emitLoaded()
     }
+
+    /** Fetch poke stats for a friendship (called on double-click). */
+    fun pokeStats(friendshipId: Int, onResult: (PokeStatsResponse) -> Unit) {
+        viewModelScope.launch {
+            runCatching { repo.getPokeStats(friendshipId) }
+                .onSuccess { onResult(it) }
+        }
+    }
+
+    /** Re-apply our poke timestamps to any activity map that lacks them. */
+    private fun mergePokedAt(activityMap: Map<Int, FriendActivityOut>): Map<Int, FriendActivityOut> =
+        activityMap.mapValues { (id, act) ->
+            val pokeTime = lastPokedAtMap[id]
+            if (pokeTime != null && act.last_poked_at == null) {
+                act.copy(last_poked_at = pokeTime)
+            } else act
+        }
 
     private fun emitLoaded() {
         val sorted = sortFriends(lastFriends, lastActivity, sortMode)

@@ -8,13 +8,13 @@ then discarded — only the computed 0..100 integers are persisted (PRD §4.5).
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.activity_calc import compute_visible_for_friend
-from app.core.config import settings
+from app.core.config import BEIJING_TZ, settings
 from app.core.data_sources import ALL_DATA_SOURCES, deserialize
 from app.models import ActivityReport, FriendDataSource, Friendship
 
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(BEIJING_TZ)
 
 
 def _get_or_create_report(db: Session, user_id: int, friend_id: int) -> ActivityReport:
@@ -106,7 +106,7 @@ def decay_all(db: Session) -> int:
     for row in rows:
         reported = row.last_reported_at
         if reported.tzinfo is None:
-            reported = reported.replace(tzinfo=timezone.utc)
+            reported = reported.replace(tzinfo=BEIJING_TZ)
         hours = (now - reported).total_seconds() / 3600.0
         decayed = row.raw_reported_value - settings.decay_rate_per_hour * hours
         new_value = max(0, round(decayed))
@@ -132,7 +132,7 @@ def mark_offline(db: Session) -> int:
     for row in rows:
         reported = row.last_reported_at
         if reported.tzinfo is None:
-            reported = reported.replace(tzinfo=timezone.utc)
+            reported = reported.replace(tzinfo=BEIJING_TZ)
         if reported < threshold:
             row.is_offline = True
             marked += 1

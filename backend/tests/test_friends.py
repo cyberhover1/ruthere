@@ -8,7 +8,7 @@ fixtures and `make_user`/`auth_header` helpers.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from app.models import QrToken
 
@@ -58,7 +58,8 @@ def test_qrcode_expired_rejected(client, db):
     token = client.post("/friends/qrcode", headers=auth_header(ta)).json()["token"]
     # Manually expire it.
     row = db.query(QrToken).filter_by(token=token).one()
-    row.expire_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    from app.core.config import BEIJING_TZ
+    row.expire_at = datetime.now(BEIJING_TZ) - timedelta(minutes=1)
     db.commit()
     resp = client.post("/friends/add-by-qrcode", json={"token": token}, headers=auth_header(tb))
     assert resp.status_code == 400

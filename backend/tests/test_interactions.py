@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
+from app.core.config import BEIJING_TZ
 from app.models import Poke
 
 from tests.helpers import auth_header, make_user
@@ -112,6 +113,12 @@ def test_poke_rate_limited_within_cooldown(client, db):
     ta, tb, _, _ = two_friends(client, db)
     fs = my_friendship_id(client, ta)
     assert client.post(f"/pokes/{fs}", headers=auth_header(ta)).status_code == 200
+    # SQLite's func.now() returns UTC, but the server interprets naive timestamps
+    # as Beijing time — backdate to Beijing "now" so elapsed ≈ 0.
+    poke = db.query(Poke).order_by(Poke.id.desc()).first()
+    if poke is not None:
+        poke.created_at = datetime.now(BEIJING_TZ)
+        db.commit()
     resp = client.post(f"/pokes/{fs}", headers=auth_header(ta))
     assert resp.status_code == 429
     assert "频繁" in resp.json()["detail"]
@@ -124,7 +131,7 @@ def test_poke_allowed_after_cooldown(client, db):
 
     # Backdate the existing poke past the cooldown window.
     poke = db.query(Poke).filter_by(from_user_id=client.get("/auth/me", headers=auth_header(ta)).json()["id"]).first()
-    poke.created_at = datetime.now(timezone.utc) - timedelta(seconds=3700)
+    poke.created_at = datetime.now(BEIJING_TZ) - timedelta(seconds=3700)
     db.commit()
 
     resp = client.post(f"/pokes/{fs}", headers=auth_header(ta))

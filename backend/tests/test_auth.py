@@ -6,8 +6,9 @@ single-device login (kicking) and the various error paths.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
+from app.core.config import BEIJING_TZ
 from app.models import EmailCode
 
 from tests.helpers import auth_header, full_flow, latest_code, login, register, verify
@@ -67,7 +68,7 @@ def test_verify_wrong_code_rejected(client, db):
 def test_verify_expired_code_rejected(client, db):
     register(client, "alice@example.com")
     code = db.query(EmailCode).filter_by(email="alice@example.com").one()
-    code.expire_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    code.expire_at = datetime.now(BEIJING_TZ) - timedelta(minutes=1)
     db.commit()
     resp = verify(client, "alice@example.com", code.code)
     assert resp.status_code == 400
@@ -154,17 +155,29 @@ def test_logout_invalidates_token(client, db):
 
 def test_resend_code_creates_new_code(client, db, sent_emails):
     register(client, "alice@example.com")
-    first = latest_code(db, "alice@example.com")
+    # SQLite's func.now() returns UTC, but the server interprets naive timestamps
+    # as Beijing time — backdate the code's created_at so cooldown is enforced.
+    from app.models import EmailCode
+    code = db.query(EmailCode).filter_by(email="alice@example.com").order_by(EmailCode.id.desc()).first()
+    if code is not None:
+        code.created_at = datetime.now(BEIJING_TZ) - timedelta(seconds=65)
+        db.commit()
     resp = client.post("/auth/resend-code", json={"email": "alice@example.com"})
-    # may hit cooldown if too fast; allow either 200 or 429 but never 5xx
-    assert resp.status_code in (200, 429)
-    if resp.status_code == 200:
-        second = latest_code(db, "alice@example.com")
-        assert second != first
+    # After backdating past the 60s cooldown, the resend must succeed.
+    assert resp.status_code == 200
+    assert len(sent_emails) >= 2  # register (1) + resend (2)
 
 
 def test_resend_code_cooldown_enforced(client, db):
     register(client, "alice@example.com")
+    # SQLite's func.now() returns UTC, but the server interprets naive timestamps
+    # as Beijing time — adjust the code's created_at to Beijing "now" so cooldown
+    # is enforced correctly.
+    from app.models import EmailCode
+    code = db.query(EmailCode).filter_by(email="alice@example.com").order_by(EmailCode.id.desc()).first()
+    if code is not None:
+        code.created_at = datetime.now(BEIJING_TZ) - timedelta(seconds=5)
+        db.commit()
     assert client.post("/auth/resend-code", json={"email": "alice@example.com"}).status_code == 429
 
 

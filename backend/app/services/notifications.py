@@ -9,11 +9,12 @@ the future `/activity/report` (M3).
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from app.core.config import BEIJING_TZ
 from app.models import Notification
 
 
@@ -74,7 +75,7 @@ def friend_removed_payload(removed_by_user_id: int, removed_by_email: str) -> di
     return {
         "removed_by_user_id": removed_by_user_id,
         "removed_by_email": removed_by_email,
-        "at": datetime.now(timezone.utc).isoformat(),
+        "at": datetime.now(BEIJING_TZ).isoformat(),
     }
 
 
@@ -83,5 +84,5 @@ def poked_payload(poked_by_user_id: int, poked_by_email: str) -> dict:
     return {
         "poked_by_user_id": poked_by_user_id,
         "poked_by_email": poked_by_email,
-        "at": datetime.now(timezone.utc).isoformat(),
+        "at": datetime.now(BEIJING_TZ).isoformat(),
     }

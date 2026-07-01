@@ -2,6 +2,7 @@ services:
   db:
     image: postgres:16-alpine
     environment:
+      TZ: Asia/Shanghai
       POSTGRES_USER: ruthere
       POSTGRES_PASSWORD: ruthere
       POSTGRES_DB: ruthere
@@ -20,6 +21,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
+      TZ: Asia/Shanghai
       DATABASE_URL: postgresql+psycopg2://ruthere:ruthere@db:5432/ruthere
     depends_on:
       db:

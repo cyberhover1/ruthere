@@ -25,16 +25,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ruthere.app.core.TimeFormat
 import com.ruthere.app.data.remote.dto.FriendRequestOut
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendRequestsScreen(
-    myUserId: Int,
     onBack: () -> Unit,
     vm: FriendRequestsViewModel = viewModel(),
 ) {
-    vm.setMyUserId(myUserId)
     val state by vm.state.collectAsState()
 
     Scaffold(topBar = { TopAppBar(title = { Text("好友申请") }) }) { padding ->
@@ -49,7 +48,7 @@ fun FriendRequestsScreen(
                         Text("暂无申请", modifier = Modifier.align(Alignment.Center))
                     } else {
                         LazyColumn {
-                            items(s.requests) { r -> RequestRow(r, vm.isIncoming(r), vm::accept, vm::reject) }
+                            items(s.requests) { r -> RequestRow(r, vm::accept, vm::reject) }
                         }
                     }
                 }
@@ -61,20 +60,27 @@ fun FriendRequestsScreen(
 @Composable
 private fun RequestRow(
     r: FriendRequestOut,
-    isIncoming: Boolean,
     onAccept: (Int) -> Unit,
     onReject: (Int) -> Unit,
 ) {
     Column(Modifier.fillMaxWidth().padding(16.dp)) {
-        val other = if (isIncoming) r.from_user_id else r.to_user_id
-        val direction = if (isIncoming) "收到来自" else "已发送给"
-        Text("$direction 用户 $other", style = MaterialTheme.typography.bodyLarge)
-        Text("状态：${statusLabel(r.status)}", style = MaterialTheme.typography.bodySmall)
-        if (isIncoming && r.status == "pending") {
+        val displayName = if (!r.from_nickname.isNullOrBlank()) r.from_nickname else r.from_email
+        Text(displayName, style = MaterialTheme.typography.bodyLarge)
+        if (r.from_nickname != null && r.from_nickname.isNotBlank()) {
+            Text(r.from_email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text(
+            "申请时间：${TimeFormat.fuzzy(r.created_at, 0, false)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (r.status == "pending") {
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { onAccept(r.id) }) { Text("同意") }
                 OutlinedButton(onClick = { onReject(r.id) }) { Text("拒绝") }
             }
+        } else {
+            Text("状态：${statusLabel(r.status)}", style = MaterialTheme.typography.bodySmall)
         }
     }
     HorizontalDivider()

@@ -7,6 +7,7 @@ import com.ruthere.app.data.remote.dto.FriendOut
 import com.ruthere.app.data.remote.dto.FriendRequestCreate
 import com.ruthere.app.data.remote.dto.FriendRequestOut
 import com.ruthere.app.data.remote.dto.FriendsListResponse
+import com.ruthere.app.data.remote.dto.PokeStatsResponse
 import com.ruthere.app.data.remote.dto.MessageResponse
 import com.ruthere.app.data.remote.dto.NotificationOut
 import com.ruthere.app.data.remote.dto.QrCodeResponse
@@ -42,6 +43,8 @@ class FriendRepository(private val networkClient: NetworkClient) {
 
     suspend fun setDataSources(friendshipId: Int, sources: List<String>): DataSourcesOut =
         api.setDataSources(friendshipId, com.ruthere.app.data.remote.dto.DataSourcesUpdate(sources))
+
+    suspend fun getPokeStats(friendshipId: Int): PokeStatsResponse = api.getPokeStats(friendshipId)
 
     suspend fun listNotifications(): List<NotificationOut> = api.listNotifications()
 }

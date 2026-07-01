@@ -15,26 +15,45 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ruthere.app.data.remote.dto.CHECKIN_TYPES
 import com.ruthere.app.data.remote.dto.CheckInOut
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+/** Beijing timezone for display. */
+private val BEIJING_ZONE = ZoneId.of("Asia/Shanghai")
+private val TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckInScreen(vm: CheckInViewModel = viewModel()) {
     val state by vm.state.collectAsState()
+
+    // Refresh check-in list every time the screen becomes visible.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) vm.refresh()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Scaffold(topBar = { TopAppBar(title = { Text("打卡") }) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
@@ -79,7 +98,7 @@ fun CheckInScreen(vm: CheckInViewModel = viewModel()) {
             } else if (state.checkins.isEmpty()) {
                 Text("暂无打卡记录", style = MaterialTheme.typography.bodySmall)
             } else {
-                LazyColumn(Modifier.fillMaxSize()) {
+                LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
                     items(state.checkins) { c -> CheckInRow(c) }
                 }
             }
@@ -93,7 +112,13 @@ private fun CheckInRow(c: CheckInOut) {
         Column(Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(c.type, style = MaterialTheme.typography.bodyLarge)
-                Text(c.created_at.take(16).replace("T", " "), style = MaterialTheme.typography.labelSmall)
+                Text(
+                    runCatching {
+                        val instant = java.time.Instant.parse(c.created_at)
+                        instant.atZone(BEIJING_ZONE).format(TIME_FORMATTER)
+                    }.getOrElse { c.created_at.take(16).replace("T", " ") },
+                    style = MaterialTheme.typography.labelSmall,
+                )
             }
             c.note?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }

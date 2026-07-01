@@ -37,6 +37,7 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var nickname by remember { mutableStateOf("") }
     var registeredEmail by remember { mutableStateOf<String?>(null) }
     val state by vm.state.collectAsState()
 
@@ -61,6 +62,12 @@ fun RegisterScreen(
             value = email, onValueChange = { email = it },
             label = { Text("邮箱") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            singleLine = true, modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(
+            value = nickname, onValueChange = { nickname = it },
+            label = { Text("昵称（选填，不填则默认使用邮箱名）") },
             singleLine = true, modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(12.dp))
@@ -94,7 +101,7 @@ fun RegisterScreen(
         }
 
         Button(
-            onClick = { vm.register(email, password) },
+            onClick = { vm.register(email, password, nickname.ifBlank { null }) },
             enabled = canRegister,
             modifier = Modifier.fillMaxWidth(),
         ) { Text("注册并发送验证码") }

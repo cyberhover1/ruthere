@@ -7,14 +7,14 @@ rate-limited to one per poke_cooldown_seconds.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
-from app.core.config import settings
+from app.core.config import BEIJING_TZ, settings
 from app.db.session import get_db
 from app.models import CheckIn, Friendship, Poke, User
 from app.schemas.auth import MessageResponse
@@ -26,7 +26,7 @@ router = APIRouter(tags=["interactions"])
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(BEIJING_TZ)
 
 
 def _get_my_friendship(db: Session, me_id: int, friendship_id: int) -> Friendship:
@@ -94,7 +94,7 @@ def poke_friend(
     if latest is not None:
         created = latest.created_at
         if created.tzinfo is None:
-            created = created.replace(tzinfo=timezone.utc)
+            created = created.replace(tzinfo=BEIJING_TZ)
         elapsed = (_now() - created).total_seconds()
         if elapsed < settings.poke_cooldown_seconds:
             raise HTTPException(

@@ -21,6 +21,8 @@ data class FriendRequestOut(
     val to_user_id: Int,
     val status: String,
     val created_at: String,
+    val from_email: String = "",
+    val from_nickname: String? = null,
 )
 
 @JsonClass(generateAdapter = false)
@@ -29,6 +31,7 @@ data class FriendOut(
     val friend_id: Int,
     val email: String,
     val nickname: String?,
+    val friend_nickname: String?,
     val created_at: String,
 )
 
@@ -53,4 +56,11 @@ data class NotificationOut(
 data class FriendsListResponse(
     val friends: List<FriendOut>,
     val notifications: List<NotificationOut> = emptyList(),
+    val friends_activity: List<FriendActivityOut> = emptyList(),
+)
+
+@JsonClass(generateAdapter = false)
+data class PokeStatsResponse(
+    val total_pokes: Int,
+    val recent_pokes: List<String>,
 )

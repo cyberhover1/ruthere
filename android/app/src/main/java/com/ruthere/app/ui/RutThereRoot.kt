@@ -145,7 +145,6 @@ fun RutThereRoot(
             }
             composable(Routes.FRIEND_REQUESTS) {
                 FriendRequestsScreen(
-                    myUserId = myUserId,
                     onBack = { navController.popBackStack() },
                 )
             }

@@ -13,6 +13,7 @@ data class FriendActivityOut(
     val value: Int,            // 0..100
     val last_reported_at: String,
     val is_offline: Boolean,
+    val last_poked_at: String? = null,  // ISO timestamp of latest poke from this friend to me
 )
 
 /** Response to /activity/report: friends' activity + piggybacked notifications. */

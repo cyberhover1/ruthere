@@ -9,14 +9,14 @@ the recipient's next report (PRD §6).
 from __future__ import annotations
 
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
-from app.core.config import settings
+from app.core.config import BEIJING_TZ, settings
 from app.core.data_sources import deserialize, serialize
 from app.db.session import get_db
 from app.models import (
@@ -27,6 +27,7 @@ from app.models import (
     QrToken,
     User,
 )
+from app.models import Poke
 from app.schemas.friends import (
     AddByQrCodeRequest,
     DataSourcesOut,
@@ -37,10 +38,13 @@ from app.schemas.friends import (
     FriendsListResponse,
     NicknameUpdate,
     NotificationOut,
+    PokeStatsResponse,
     QrCodeResponse,
     SearchUserOut,
 )
 from app.schemas.auth import MessageResponse
+from app.schemas.friends import FriendActivityItem
+from app.services.activity import visible_to_user
 from app.services.notifications import (
     create_notification,
     fetch_and_mark_delivered,
@@ -54,7 +58,7 @@ router = APIRouter(prefix="/friends", tags=["friends"])
 # --- helpers ---------------------------------------------------------------
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(BEIJING_TZ)
 
 
 def _create_mutual_friendship(db: Session, a_id: int, b_id: int) -> None:
@@ -105,7 +109,7 @@ def add_by_qrcode(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="二维码不存在")
     if row.used:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="二维码已使用")
-    if row.expire_at.replace(tzinfo=timezone.utc) < _now():
+    if row.expire_at.replace(tzinfo=BEIJING_TZ) < _now():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="二维码已过期")
     if row.owner_user_id == user.id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不能添加自己为好友")
@@ -170,14 +174,24 @@ def create_request(
 def list_requests(
     user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> list[FriendRequestOut]:
+    """Return incoming friend requests for the current user (sent to me)."""
     rows = db.scalars(
         select(FriendRequest)
         .where(
-            (FriendRequest.from_user_id == user.id) | (FriendRequest.to_user_id == user.id)
+            FriendRequest.to_user_id == user.id,
+            FriendRequest.status == "pending",
         )
         .order_by(FriendRequest.created_at.desc())
     )
-    return [FriendRequestOut.model_validate(r) for r in rows]
+    result: list[FriendRequestOut] = []
+    for r in rows:
+        from_user = db.get(User, r.from_user_id)
+        out = FriendRequestOut.model_validate(r)
+        if from_user:
+            out.from_email = from_user.email
+            out.from_nickname = from_user.nickname
+        result.append(out)
+    return result
 
 
 def _get_pending_request(db: Session, req_id: int, user_id: int) -> FriendRequest:
@@ -223,6 +237,7 @@ def _friend_out(db: Session, me_id: int, fs: Friendship) -> FriendOut:
         friend_id=fs.friend_id,
         email=friend.email,
         nickname=fs.nickname,
+        friend_nickname=friend.nickname,
         created_at=fs.created_at,
     )
 
@@ -237,8 +252,33 @@ def list_friends(
     friends = [_friend_out(db, user.id, fs) for fs in rows]
     # Piggyback undelivered notifications so the list view can surface them.
     notifs = fetch_and_mark_delivered(db, user.id)
+    # Include each friend's visible activity in the same response so the
+    # frontend never sees a stale 0 while waiting for the sensor worker.
+    activity_rows = visible_to_user(db, user.id)
+    friends_activity = [
+        FriendActivityItem(
+            friend_id=r.friend_id,
+            value=r.value,
+            last_reported_at=r.last_reported_at,
+            is_offline=r.is_offline,
+        ) for r in activity_rows
+    ]
+    # Populate last_poked_at for each friend (latest poke from friend to me).
+    friend_ids = [a.friend_id for a in friends_activity]
+    if friend_ids:
+        latest_pokes = db.execute(
+            select(Poke.from_user_id, func.max(Poke.created_at).label("last_poked_at"))
+            .where(Poke.from_user_id.in_(friend_ids), Poke.to_user_id == user.id)
+            .group_by(Poke.from_user_id)
+        ).all()
+        poke_map = {row.from_user_id: row.last_poked_at for row in latest_pokes}
+        for a in friends_activity:
+            a.last_poked_at = poke_map.get(a.friend_id)
+
     return FriendsListResponse(
-        friends=friends, notifications=[NotificationOut(**n) for n in to_payload_dicts(notifs)]
+        friends=friends,
+        notifications=[NotificationOut(**n) for n in to_payload_dicts(notifs)],
+        friends_activity=friends_activity,
     )
 
 
@@ -247,6 +287,34 @@ def _get_my_friendship(db: Session, me_id: int, friendship_id: int) -> Friendshi
     if fs is None or fs.user_id != me_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="好友关系不存在")
     return fs
+
+
+@router.get("/{friendship_id}/poke-stats", response_model=PokeStatsResponse)
+def friend_poke_stats(
+    friendship_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> PokeStatsResponse:
+    """Return how many times this friend has poked me, plus the last 2 timestamps."""
+    fs = _get_my_friendship(db, user.id, friendship_id)
+    friend_id = fs.friend_id
+
+    from sqlalchemy import func as sa_func
+
+    count = db.scalar(
+        select(sa_func.count(Poke.id)).where(
+            Poke.from_user_id == friend_id, Poke.to_user_id == user.id
+        )
+    )
+    recent = list(
+        db.scalars(
+            select(Poke.created_at)
+            .where(Poke.from_user_id == friend_id, Poke.to_user_id == user.id)
+            .order_by(Poke.created_at.desc())
+            .limit(2)
+        )
+    )
+    return PokeStatsResponse(total_pokes=count or 0, recent_pokes=recent)
 
 
 @router.patch("/{friendship_id}/nickname", response_model=MessageResponse)

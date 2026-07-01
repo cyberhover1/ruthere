@@ -3,7 +3,7 @@ package com.ruthere.app.data.remote.dto
 import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = false)
-data class RegisterRequest(val email: String, val password: String)
+data class RegisterRequest(val email: String, val password: String, val nickname: String? = null)
 
 @JsonClass(generateAdapter = false)
 data class ResendCodeRequest(val email: String)
@@ -18,7 +18,10 @@ data class LoginRequest(val email: String, val password: String, val device_iden
 data class TokenResponse(val access_token: String, val token_type: String = "bearer", val user_id: Int)
 
 @JsonClass(generateAdapter = false)
-data class UserOut(val id: Int, val email: String, val is_verified: Boolean)
+data class UserOut(val id: Int, val email: String, val nickname: String? = null, val is_verified: Boolean)
 
 @JsonClass(generateAdapter = false)
 data class MessageResponse(val message: String)
+
+@JsonClass(generateAdapter = false)
+data class NicknameUpdateRequest(val nickname: String?)

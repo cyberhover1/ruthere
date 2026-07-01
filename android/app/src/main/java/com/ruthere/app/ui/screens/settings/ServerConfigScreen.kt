@@ -8,7 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,7 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 import com.ruthere.app.BuildConfig
 
-/** Settings → Server: edit backend IP/port, restore defaults, save & apply. */
+/** Settings → Server: edit backend IP/port, nickname, restore defaults, save & apply. */
 @Composable
 fun ServerConfigScreen(
     vm: ServerConfigViewModel = viewModel(),
@@ -45,16 +49,45 @@ fun ServerConfigScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("服务器配置", style = MaterialTheme.typography.headlineSmall)
+        Text("设置", style = MaterialTheme.typography.headlineSmall)
 
+        // --- Nickname card ---
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("当前生效地址", style = MaterialTheme.typography.labelLarge)
+                Text("个人资料", style = MaterialTheme.typography.titleSmall)
+                Text("邮箱：${state.userEmail}", style = MaterialTheme.typography.bodyMedium)
+                OutlinedTextField(
+                    value = state.nicknameInput,
+                    onValueChange = vm::onNicknameChange,
+                    label = { Text("昵称（留空则使用邮箱名）") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Button(
+                    onClick = vm::saveNickname,
+                    enabled = !state.savingNickname,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (state.savingNickname) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.padding(end = 4.dp).size(16.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    }
+                    Text("保存昵称")
+                }
+            }
+        }
+
+        // --- Server config card ---
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("服务器配置", style = MaterialTheme.typography.titleSmall)
                 Text(
-                    "${state.ip}:${state.port}",
+                    "当前生效地址：${state.ip}:${state.port}",
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
@@ -103,8 +136,8 @@ fun ServerConfigScreen(
         if (state.saving) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator()
-                Spacer(Modifier.height(0.dp))
-                Text("  保存中…")
+                Spacer(Modifier.width(8.dp))
+                Text("保存中…")
             }
         }
 
@@ -125,7 +158,7 @@ fun ServerConfigScreen(
             Text("退出登录")
         }
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(16.dp))
         Text(
             "v${BuildConfig.VERSION_NAME}",
             style = MaterialTheme.typography.bodySmall,
@@ -135,7 +168,7 @@ fun ServerConfigScreen(
         )
     }
 
-    // Logout confirmation dialog
+    // Logout confirmation dialog (outside Column, at top level of @Composable)
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },

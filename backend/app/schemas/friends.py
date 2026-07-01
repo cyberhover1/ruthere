@@ -35,6 +35,8 @@ class FriendRequestOut(BaseModel):
     to_user_id: int
     status: str
     created_at: datetime
+    from_email: str = ""
+    from_nickname: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -45,10 +47,18 @@ class FriendOut(BaseModel):
     friendship_id: int  # the row in friendships (user_id=me, friend_id=them)
     friend_id: int
     email: EmailStr
-    nickname: str | None
+    nickname: str | None       # per-friendship nickname (what I call them)
+    friend_nickname: str | None = None  # the friend's own nickname (from User)
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PokeStatsResponse(BaseModel):
+    """Poke statistics from a friend toward me."""
+
+    total_pokes: int = 0
+    recent_pokes: list[datetime] = Field(default_factory=list)
 
 
 class NicknameUpdate(BaseModel):
@@ -71,6 +81,17 @@ class NotificationOut(BaseModel):
     created_at: datetime
 
 
+class FriendActivityItem(BaseModel):
+    """A friend's activity as seen by me (duplicated from activity.py to avoid circular imports)."""
+
+    friend_id: int
+    value: int = 0
+    last_reported_at: datetime | None = None
+    is_offline: bool = False
+    last_poked_at: datetime | None = None
+
+
 class FriendsListResponse(BaseModel):
     friends: list[FriendOut]
     notifications: list[NotificationOut] = Field(default_factory=list)
+    friends_activity: list[FriendActivityItem] = Field(default_factory=list)
