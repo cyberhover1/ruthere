@@ -79,19 +79,21 @@ def report_activity(
 def reset_activity_for_user(user_id: int, db: Session) -> None:
     """Set all of a user's per-friend visible values to full (100).
 
+    Creates ActivityReport rows per friend if they don't exist yet.
     Triggered on login (PRD §4.4.1) and poke-initiator (M4).
     """
-    rows = list(
-        db.scalars(select(ActivityReport).where(ActivityReport.user_id == user_id))
+    friend_ids = db.scalars(
+        select(Friendship.friend_id).where(Friendship.user_id == user_id)
     )
     now = _now()
-    for row in rows:
+    for friend_id in friend_ids:
+        row = _get_or_create_report(db, user_id, friend_id)
         row.value = settings.activity_max_value
         row.raw_reported_value = settings.activity_max_value
         row.last_reported_at = now
         row.is_offline = False
     db.commit()
-    logger.info("reset activity for user_id=%s (%d rows)", user_id, len(rows))
+    logger.info("reset activity for user_id=%s", user_id)
 
 
 def decay_all(db: Session) -> int:

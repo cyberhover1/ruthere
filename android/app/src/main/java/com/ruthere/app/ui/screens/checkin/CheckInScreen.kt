@@ -33,11 +33,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ruthere.app.data.remote.dto.CHECKIN_TYPES
 import com.ruthere.app.data.remote.dto.CheckInOut
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-/** Beijing timezone for display. */
-private val BEIJING_ZONE = ZoneId.of("Asia/Shanghai")
 private val TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -114,8 +111,10 @@ private fun CheckInRow(c: CheckInOut) {
                 Text(c.type, style = MaterialTheme.typography.bodyLarge)
                 Text(
                     runCatching {
-                        val instant = java.time.Instant.parse(c.created_at)
-                        instant.atZone(BEIJING_ZONE).format(TIME_FORMATTER)
+                        java.time.LocalDateTime.parse(
+                            c.created_at,
+                            java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+                        ).format(TIME_FORMATTER)
                     }.getOrElse { c.created_at.take(16).replace("T", " ") },
                     style = MaterialTheme.typography.labelSmall,
                 )

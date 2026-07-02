@@ -66,9 +66,11 @@ private fun RequestRow(
     Column(Modifier.fillMaxWidth().padding(16.dp)) {
         val displayName = if (!r.from_nickname.isNullOrBlank()) r.from_nickname else r.from_email
         Text(displayName, style = MaterialTheme.typography.bodyLarge)
-        if (r.from_nickname != null && r.from_nickname.isNotBlank()) {
-            Text(r.from_email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        Text(
+            r.from_email,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Text(
             "申请时间：${TimeFormat.fuzzy(r.created_at, 0, false)}",
             style = MaterialTheme.typography.bodySmall,

@@ -252,28 +252,32 @@ def list_friends(
     friends = [_friend_out(db, user.id, fs) for fs in rows]
     # Piggyback undelivered notifications so the list view can surface them.
     notifs = fetch_and_mark_delivered(db, user.id)
-    # Include each friend's visible activity in the same response so the
-    # frontend never sees a stale 0 while waiting for the sensor worker.
-    activity_rows = visible_to_user(db, user.id)
-    friends_activity = [
-        FriendActivityItem(
-            friend_id=r.friend_id,
-            value=r.value,
-            last_reported_at=r.last_reported_at,
-            is_offline=r.is_offline,
-        ) for r in activity_rows
-    ]
-    # Populate last_poked_at for each friend (latest poke from friend to me).
-    friend_ids = [a.friend_id for a in friends_activity]
-    if friend_ids:
-        latest_pokes = db.execute(
-            select(Poke.from_user_id, func.max(Poke.created_at).label("last_poked_at"))
-            .where(Poke.from_user_id.in_(friend_ids), Poke.to_user_id == user.id)
-            .group_by(Poke.from_user_id)
-        ).all()
-        poke_map = {row.from_user_id: row.last_poked_at for row in latest_pokes}
-        for a in friends_activity:
-            a.last_poked_at = poke_map.get(a.friend_id)
+    # Include each friend's visible activity + poke data in the response.
+    # Always create an entry for every friend, even without activity reports,
+    # so the frontend always gets poke timestamps.
+    latest_pokes = db.execute(
+        select(Poke.from_user_id, func.max(Poke.created_at).label("last_poked_at"))
+        .where(Poke.to_user_id == user.id)
+        .group_by(Poke.from_user_id)
+    ).all()
+    poke_map = {row.from_user_id: row.last_poked_at for row in latest_pokes}
+
+    # visible_to_user returns ActivityReport rows where friend_id == viewer_id.
+    # These have: user_id = friend (data owner), friend_id = viewer.
+    activity_map = {r.user_id: r for r in visible_to_user(db, user.id)}
+
+    friends_activity = []
+    for f in friends:
+        ar = activity_map.get(f.friend_id)
+        friends_activity.append(
+            FriendActivityItem(
+                friend_id=f.friend_id,
+                value=ar.value if ar else 0,
+                last_reported_at=ar.last_reported_at if ar else None,
+                is_offline=ar.is_offline if ar else True,
+                last_poked_at=poke_map.get(f.friend_id),
+            )
+        )
 
     return FriendsListResponse(
         friends=friends,
